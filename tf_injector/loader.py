@@ -16,6 +16,9 @@ import tqdm
 
 
 def load_gtsrb():
+    """
+    Custom loader for GTSRB
+    """
     dt_path = DEFAULT_DATASET_PATH / "GTSRB/GTSRB_keras"
     if not os.path.exists(dt_path):
         download_gtsrb()
@@ -23,6 +26,9 @@ def load_gtsrb():
 
 
 def from_tensor_slices(loader):
+    """
+    Loader wrapper for keras datasets
+    """
     def wrapper():
         return tf.data.Dataset.from_tensor_slices(loader()[1])
 
@@ -74,6 +80,20 @@ def load_network(
     model_path=DEFAULT_MODEL_PATH,
     use_tf: bool = False
 ) -> tuple[keras.Model, tf.data.Dataset]:
+    """
+    Given a network name and a dataset name, loads the keras model and the dataset.
+    It also creates a preprocessing pipeline, either using numpy or tensorflow functions.
+    Args:
+        network_name: the name of the network, it will load a file placed in
+            model_path/dataset_name/network_name.keras
+        dataset_name: the name of the dataset
+        model_path: the name of the folder containing the models. It is expected to be organised in
+            subfolders for each dataset
+        use_tf: whether use TF preprocessing functions
+    
+    Returns:
+        A tuple containing the keras model and the tensorflow dataset
+    """
     model_path = os.path.join(model_path, dataset_name, network_name + ".keras")
     print("loading model ", network_name)
     model = keras.models.load_model(model_path)
@@ -82,6 +102,7 @@ def load_network(
     print("loading dataset...")
     d_load = loader(dataset_name.lower())
     print("loaded")
+
     if use_tf:
         dataset = d_load.map(preprocessors[dataset_name])
     else:

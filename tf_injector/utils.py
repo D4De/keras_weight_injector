@@ -65,7 +65,6 @@ def _downloader(url, file_path):
             r.raise_for_status()
             total = int(r.headers.get("content-length", 0))
 
-            # tqdm has many interesting parameters. Feel free to experiment!
             tqdm_params = {
                 "total": total,
                 "miniters": 1,
@@ -74,7 +73,7 @@ def _downloader(url, file_path):
                 "unit_divisor": 1024,
             }
             with tqdm(**tqdm_params) as pb:
-                for chunk in r.iter_content():
+                for chunk in r.iter_content(chunk_size=1024*32):
                     pb.update(len(chunk))
                     f.write(chunk)
 
@@ -85,6 +84,10 @@ def _extractor(file_path):
 
 
 def create_tf_dataset(ds_path, out_path, labels_dict):
+    """
+    Since .ppm images are not supported by TF, converts them with Pillow then
+    efficiently stores them in a TF dataset.
+    """
     print("creating dataset", ds_path)
     imgs = []
     labels = []
@@ -108,6 +111,10 @@ def create_tf_dataset(ds_path, out_path, labels_dict):
 
 
 def download_gtsrb():
+    """
+    Downloads the GTSRB test dataset together with GT labels.
+    The images are stored in a TF dataset.
+    """
     image_url = "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_Images.zip"
     gt_url = "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_GT.zip"
     gtsrb_path = DEFAULT_DATASET_PATH / "GTSRB"
@@ -122,6 +129,7 @@ def download_gtsrb():
     _extractor(gtsrb_path / "gt.zip")
     print("done")
 
+    # maps each file with its GT class
     file_class = {}
     with open(gtsrb_path / "GT-final_test.csv", "r") as f:
         reader = csv.reader(f, delimiter=";")
