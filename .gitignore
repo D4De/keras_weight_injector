@@ -158,13 +158,7 @@ cython_debug/
 **/datasets/
 **/weights/
 
-# Ignore all weights files except for a placeholder .md file (This is due to git that does not support adding empty folders)
-**/models/pretrained_models/**/*
-!**/models/pretrained_models/**/*.md
-**/models/converted-tf/**/*
-!**/models/converted-tf/**/*.md
-
-models/**
+models/**/*.keras
 
 scripts
 reports
