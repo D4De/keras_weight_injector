@@ -43,6 +43,7 @@ INJECTED_LAYERS_TYPES = (keras.layers.Conv2D, keras.layers.Dense)
 
 REPORT_HEADER = (
     "inj_id",
+    "target_layer",
     "layer_weigths",
     "bit_pos",
     "n_injections",
