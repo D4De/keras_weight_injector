@@ -26,7 +26,7 @@ def make_np_preprocessor(mean: TransformType, std: TransformType) -> Callable:
         image = np.asarray(image, dtype=np.float32)
         image = image / np.float32(255.0)
         image = (image - mean_np) / std_np
-        return image, label
+        return image, np.array(label, np.uint8)
 
     return preprocessor
 
