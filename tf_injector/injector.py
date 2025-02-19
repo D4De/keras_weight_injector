@@ -89,6 +89,16 @@ not present in the network: {included_layers-target_layers}"
             desc=desc,
             ncols=shutil.get_terminal_size().columns,
         )
+    
+    def validate(self):
+        """
+        Tests that all the faults target a valid index inside the layer 
+        """
+        for  index, fault in enumerate(tqdm(self.faults.faults)):
+            layer, coords, bitpos = fault
+            target_shape = self.target_layers[layer].get_weights()[0].shape
+            assert all(map(lambda t: t[0]<t[1], zip(coords, target_shape))), f"ERROR: index overflow at fault {index} {coords} vs {target_shape}"
+            assert 0<=bitpos<32
 
     def _run_inference_on_batch(self, data) -> np.ndarray:
         return self.network(data).numpy()

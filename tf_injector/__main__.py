@@ -73,6 +73,12 @@ def parse_args():
     parser.add_argument(
         "--seed", default=None, type=int, help="random seed for determinism"
     )
+
+    parser.add_argument(
+        "--validate",
+        action="store_true",
+        help="Validate the fault list before running the campaign",
+    )
     parsed_args = parser.parse_args()
 
     return parsed_args
@@ -98,6 +104,10 @@ def main(args):
             cw.save_scores(output)
     else:
         injector.load_fault_list(args.fault_list, resume_from=args.resume_from)
+        if args.validate:
+            print("Running validation")
+            injector.validate()
+
         with CampaignWriter(args.dataset, args.network_name, args.output_path) as cw:
             injector.run_campaign(
                 batch=args.batch_size,
