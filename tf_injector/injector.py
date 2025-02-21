@@ -8,10 +8,11 @@ import shutil
 
 from dataclasses import dataclass, field
 from contextlib import contextmanager
-from typing import Callable, Optional
+from typing import Type 
 
 from tf_injector.writer import CampaignWriter
 from tf_injector.utils import INJECTED_LAYERS_TYPES
+from tf_injector.metrics import Metric
 
 FaultType = tuple[str, tuple[int, ...], int]
 
@@ -33,7 +34,7 @@ class Injector:
         """
         Args:
             network: the target network
-            dataset: the dataset on which the inferences are run
+            dataset: the dataset on which the inferences are executed
         """
         self.network = network
         self.dataset = dataset
@@ -131,21 +132,18 @@ not present in the network: {included_layers-target_layers}"
 
     def run_campaign(
         self,
-        batch: int = 64,
+        batch: int,
+        metric: Type[Metric],
+        outputter: CampaignWriter,
         save_scores: bool = False,
-        gold_row_metric: Optional[Callable] = None,
-        faulty_row_metric_maker: Optional[Callable[..., Callable]] = None,
-        outputter: Optional[CampaignWriter] = None,
     ):
         """
         Runs a campaign with the loaded fault list
         Params:
-            batch: inference batch size (default=64)
-            save_scores: whether save scores as numpy array (default=False)
-            gold_row_metric: a callable which computes metrics on the gold row.
-            faulty_row_metric_maker: a callable which build a metric function for
-                faults using gold scores and labels
+            batch: inference batch size
+            metric: A Metric object whose metrics will be passed to the outputter
             outputter: CampaignWriter instance
+            save_scores: whether save scores as numpy array (default=False)
         """
         if not self.faults.faults:
             raise RuntimeError(
@@ -153,34 +151,26 @@ not present in the network: {included_layers-target_layers}"
             )
         gold_scores, labels = self.run_inference(batch)  # clean run
         gold_labels = gold_scores.argmax(axis=1, keepdims=True)
+        metric_instance = metric(gold_scores, gold_labels, labels)
 
-        if gold_row_metric:
-            gold_output = (len(labels), *gold_row_metric(gold_scores, labels))
-            if outputter:
-                outputter.write_gold(gold_output)
-                if save_scores:
-                    outputter.save_scores(gold_scores)
-
-        if faulty_row_metric_maker:
-            faulty_row_metric = faulty_row_metric_maker(gold_scores, gold_labels)
-        else:
-            faulty_row_metric = None
+        gold_output = (len(labels), *metric_instance.clean_output())
+        outputter.write_gold(gold_output)
+        if save_scores:
+            outputter.save_scores(gold_scores)
 
         fault_id = self.faults.resume_idx
         pbar = self._tqdm(self.faults.faults[fault_id:], False, "Injection")
         for fault in pbar:
             with self._apply_fault(fault):
                 faulty_scores, labels = self.run_inference(batch)
-                if faulty_row_metric:
-                    if outputter:
-                        outputter.write_fault(
-                            fault_id,
-                            len(labels),
-                            fault,
-                            faulty_row_metric(faulty_scores, labels),
-                        )
-                        if save_scores:
-                            outputter.save_scores(faulty_scores, inj_id=fault_id)
+                outputter.write_fault(
+                    fault_id,
+                    len(labels),
+                    fault,
+                    metric_instance.faulty_output(faulty_scores),
+                )
+                if save_scores:
+                    outputter.save_scores(faulty_scores, inj_id=fault_id)
             fault_id += 1
 
     def _reset_fault(self):

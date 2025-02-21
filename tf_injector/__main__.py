@@ -2,10 +2,10 @@ import argparse
 
 import tensorflow as tf  # type:ignore
 
-from tf_injector.utils import SUPPORTED_MODELS, SUPPORTED_DATASETS, DEFAULT_REPORT_DIR
+from tf_injector.utils import SUPPORTED_MODELS, SUPPORTED_DATASETS, DEFAULT_REPORT_DIR, IMAGE_CLASSIFICATION_REPORT_HEADER
 from tf_injector.loader import load_network
 from tf_injector.injector import Injector
-from tf_injector.metrics import gold_row_std_metric, make_faulty_row_std_metric
+from tf_injector.metrics import ImageClassificationMetric
 from tf_injector.writer import CampaignWriter
 
 
@@ -92,10 +92,16 @@ def main(args):
 
     network, dataset = load_network(args.network_name, args.dataset, use_tf=args.use_tf)
     injector = Injector(network, dataset)
+    
+    # add metric choice logic here
+    metric = ImageClassificationMetric
+
+    # add report header choice logic here
+    report_header = IMAGE_CLASSIFICATION_REPORT_HEADER
 
     if args.fault_list is None:
         output, labels = injector.run_inference(args.batch_size)
-        top_1, top_5 = gold_row_std_metric(output, labels)
+        top_1, top_5 = ImageClassificationMetric(output, labels, labels).clean_metric()
         print(
             f"GOLD stats:\nimages: {len(dataset)}\ntop 1 accuracy: {top_1}\ntop 5 accuracy: {top_5}"
         )
@@ -108,13 +114,12 @@ def main(args):
             print("Running validation")
             injector.validate()
 
-        with CampaignWriter(args.dataset, args.network_name, args.output_path) as cw:
+        with CampaignWriter(args.dataset, args.network_name, report_header, args.output_path) as cw:
             injector.run_campaign(
                 batch=args.batch_size,
-                save_scores=args.save_scores,
-                gold_row_metric=gold_row_std_metric,
-                faulty_row_metric_maker=make_faulty_row_std_metric,
+                metric=metric,
                 outputter=cw,
+                save_scores=args.save_scores,
             )
 
 

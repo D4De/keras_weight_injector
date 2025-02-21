@@ -4,7 +4,7 @@ import os
 
 from datetime import datetime
 
-from tf_injector.utils import REPORT_HEADER, DEFAULT_REPORT_DIR
+from tf_injector.utils import DEFAULT_REPORT_DIR
 
 from typing import Optional
 
@@ -17,7 +17,7 @@ class CampaignWriter:
     """
 
     def __init__(
-        self, dataset: str, network: str, file_dir: os.PathLike = DEFAULT_REPORT_DIR
+        self, dataset: str, network: str, report_header: tuple[str,...], file_dir: os.PathLike = DEFAULT_REPORT_DIR
     ):
         target_dir = os.path.join(file_dir, dataset, network)
         os.makedirs(target_dir, exist_ok=True)
@@ -25,13 +25,14 @@ class CampaignWriter:
         self.filepath = os.path.join(
             target_dir, self.get_filename(dataset, network, self.time)
         )
+        self.report_header = report_header
 
     def __enter__(self) -> "CampaignWriter":
         write_header = not os.path.exists(self.filepath)
         self.file = open(self.filepath, "a")
         self.writer = csv.writer(self.file)
         if write_header:
-            self.writer.writerow(REPORT_HEADER)
+            self.writer.writerow(self.report_header)
 
         return self
 
@@ -47,9 +48,9 @@ class CampaignWriter:
         report_folder = os.path.join(report_folder_p, self.time)
         return report_folder
 
-    def write_gold(self, gold_row: tuple[int, int, int]):
+    def write_gold(self, gold_row: tuple[int,...]):
         padding = [None]
-        row = ("GOLDEN", *(padding * 3), *gold_row, *(padding * 4))
+        row = ("GOLDEN", *(padding * 3), *gold_row)
         self.writer.writerow(row)
 
     def write_fault(

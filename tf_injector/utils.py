@@ -47,6 +47,9 @@ REPORT_HEADER = (
     "layer_weigths",
     "bit_pos",
     "n_injections",
+)
+
+IMAGE_CLASSIFICATION_REPORT_HEADER = REPORT_HEADER + (
     "top_1_correct",
     "top_5_correct",
     "top_1_robust",

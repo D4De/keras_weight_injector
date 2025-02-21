@@ -7,20 +7,75 @@ This project is a collaboration between the following institutions:
 
 - [Politecnico di Torino](https://www.polito.it/)
 - [Politecnico di Milano](https://www.polimi.it/)
-- [Ecole Centrale de Lyon](https://www.ec-lyon.fr/en)
 
 
 ## Setup
-1. Ensure you have Python 3.10 installed in your working environment
+1. Ensure you have Python 3.9 installed in your working environment
 2. Create a virtual environment
 ```
 python -m venv venv_name
 source venv_name/bin/activate
 ```
-3. Install dependencies
+3. Install the dependencies
 ```
 pip install -r requirements.txt
 ```
+4. The pretrained models are available in the repository [dnn-benchmarks](https://github.com/cad-polito-it/dnn-benchmarks). Read the repository's README for more information.
+5. Given a .keras file trained on a dataset, move it to the `models/dataset_name/` folder. For instance, a ResNet18.keras file trained on the CIFAR10 dataset will be placed in `models/CIFAR10/`.
+
+## Extension
+### Dataset
+- in `loaders.py`, add a loading function that returns a TF tensor containing the data and the labels of the dataset. This function should also handle the initialisation of the dataset if not present on the device.
+- Register the dataset loader editing the `loaders` variable:
+```
+loaders = {
+    ...
+    "dataset-name":loader_function,
+}
+```
+- edit `preprocessing.py` to add a preprocessing function
+- Register the preprocessors using numpy in the `np_preprocessors` variable
+```
+np_preprocessors = {
+    ...
+    "dataset-name":np_preprocessing_function,
+}
+```
+- Register the preprocessors relying on TensorFlow in the `preprocessors` variable
+```
+preprocessors = {
+    ...
+    "dataset-name":tf_preprocessing_function,
+}
+```
+- Register the dataset by editing the variable `SUPPORTED_DATASET` in `utils.py`
+```
+SUPPORTED_DATASET = [..., "dataset-name"]
+```
+
+### Models
+- Place the `.keras` file in the `models/dataset-name/` folder
+- Register the model by editing the variable `SUPPORTED_MODELS` in `utils.py`
+```
+SUPPORTED_MODELS = [..., "model-name"]
+```
+
+### Metrics
+- Add a new metrics system by subclassing `Metric` in `metrics.py`. Read its docstrings for more information
+- Add a new metric header in `settings.py`:
+```
+MY_HEADER = REPORT_HEADER + (
+ 'metric_name1', ... , 'metric_name_n'
+)
+```
+- Edit lines 5 and 8 in `__main__.py` to import the new header and the new metric:
+```
+5. from tf_injector.utils import ..., MY_HEADER
+8. from tf_injector.metrics import ..., MyMetric
+```
+- Edit the function `main` in `__main__.py` to implement a selection logic for the headers and the metrics, assigning them to the variables `report_header` `metric` respectively.
+
+
 ## Available Models
 
 The Keras versions of the models, when available, are obtained using the [nobuco](https://github.com/AlexanderLutsenko/nobuco) PyTorch to Keras converter.
