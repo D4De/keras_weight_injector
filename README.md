@@ -7,6 +7,7 @@ This project is a collaboration between the following institutions:
 
 - [Politecnico di Torino](https://www.polito.it/)
 - [Politecnico di Milano](https://www.polimi.it/)
+- [University of Lyon](https://www.universite-lyon.fr/)
 
 
 ## Setup
