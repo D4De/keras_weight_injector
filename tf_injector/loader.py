@@ -46,9 +46,9 @@ def load_cifar100():
 
 
 loaders = {
-    "cifar10": load_cifar10,
-    "cifar100": load_cifar100,
-    "gtsrb": load_gtsrb,
+    "CIFAR10": load_cifar10,
+    "CIFAR100": load_cifar100,
+    "GTSRB": load_gtsrb,
 }
 
 
@@ -100,7 +100,7 @@ def load_network(
     print("done")
     assert dataset_name in SUPPORTED_DATASETS
     print("loading dataset...")
-    d_load = loader(dataset_name.lower())
+    d_load = loader(dataset_name)
     print("loaded")
 
     if use_tf:
