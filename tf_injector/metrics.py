@@ -72,7 +72,11 @@ class Metric(metaclass=ABCMeta):
         """
         This function will be called by the injector to obtain the values that will
         be written in the report file as the golden row (e.g. add commas if the metrics are 
-        less than the faulty ones)
+        less than the faulty ones).
+        For instance, if the clean metrics are TOP-1 and TOP-5 accuracy, but there
+        are three more faulty metrics, the output would be like:
+        (0.9182, 0.9954, None, None, None)
+        Where None is used as placeholder for an empty cell in the CSV.
         """
         pass
 
