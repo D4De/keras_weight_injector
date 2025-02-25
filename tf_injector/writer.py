@@ -17,15 +17,21 @@ class CampaignWriter:
     """
 
     def __init__(
-        self, dataset: str, network: str, report_header: tuple[str,...], file_dir: os.PathLike = DEFAULT_REPORT_DIR
+        self,
+        dataset: str, 
+        network: str,
+        report_header: tuple[str,...],
+        file_dir: os.PathLike = DEFAULT_REPORT_DIR,
+        one_line_per_input = False,
     ):
-        target_dir = os.path.join(file_dir, dataset, network)
+        target_dir = os.path.join(file_dir, str(dataset), network)
         os.makedirs(target_dir, exist_ok=True)
         self.time = datetime.now().strftime("%y%m%d_%H%M")
         self.filepath = os.path.join(
             target_dir, self.get_filename(dataset, network, self.time)
         )
         self.report_header = report_header
+        self.one_line_per_input = one_line_per_input
 
     def __enter__(self) -> "CampaignWriter":
         write_header = not os.path.exists(self.filepath)
@@ -41,7 +47,7 @@ class CampaignWriter:
 
     @staticmethod
     def get_filename(dataset: str, network: str, time: str) -> str:
-        return f"{dataset}_{network}_{time}.csv"
+        return f"{str(dataset)}_{network}_{time}.csv"
 
     def get_report_folder(self) -> str:
         report_folder_p = os.path.dirname(self.filepath)
@@ -50,7 +56,8 @@ class CampaignWriter:
 
     def write_gold(self, gold_row: tuple[int,...]):
         padding = [None]
-        row = ("GOLDEN", *(padding * 3), *gold_row)
+        repeat = 3 if not self.one_line_per_input else 4
+        row = ("GOLDEN", *(padding * repeat), *gold_row)
         self.writer.writerow(row)
 
     def write_fault(
@@ -60,8 +67,21 @@ class CampaignWriter:
         fault: tuple[int, ...],
         fault_metrics: tuple[int, ...],
     ):
-        row = (fault_id, *fault, num_injections, *fault_metrics)
-        self.writer.writerow(row)
+        if not self.one_line_per_input:
+            row = (fault_id, *fault, num_injections, *fault_metrics)
+            self.writer.writerow(row) 
+        else:
+            rows = []
+            for i in range(num_injections):
+                rows.append([
+                    fault_id,
+                    *fault,
+                    i,
+                    num_injections,
+                    *[ *fault_metrics[i].numpy().tolist() ],
+                ])
+            self.writer.writerows(rows)
+
 
     def save_scores(self, scores: np.ndarray, inj_id: Optional[int] = None):
         target_path = self.get_report_folder() + os.path.sep

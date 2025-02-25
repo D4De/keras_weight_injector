@@ -1,6 +1,7 @@
 from typing import Callable
 from abc import abstractmethod, ABCMeta
 import numpy as np
+import tensorflow as tf 
 
 
 def make_k_accuracy(k: int) -> Callable:
@@ -34,7 +35,6 @@ def non_critical_counter(top_1_robust: int, masked_count: int) -> int:
 def critical_counter(num_inferences: int, top_1_robust: int) -> int:
     return num_inferences - top_1_robust
 
-
 top_1_accuracy = make_k_accuracy(1)
 top_5_accuracy = make_k_accuracy(5)
 
@@ -47,7 +47,7 @@ class Metric(metaclass=ABCMeta):
     - Metric functions that return a tuple containing the metrics
     - Output functions that return a tuple that will be used to fill the report file
     """
-    def __init__(self, clean_scores: np.ndarray, clean_labels: np.ndarray, labels: np.ndarray):
+    def __init__(self, clean_scores: tf.Tensor, clean_labels: tf.Tensor, labels: tf.Tensor):
         """
         Initialises the class with data related to the clean inference and the labels
         Args:
@@ -115,3 +115,70 @@ class ImageClassificationMetric(Metric):
             critical_counter(len(self.clean_labels), top_1_robust),
         )
 
+def compute_IOU(x1, x2, numclass):
+    x1 = tf.argmax(x1, axis=-1, output_type=tf.dtypes.uint16)
+    x2 = tf.argmax(x2, axis=-1, output_type=tf.dtypes.uint16)
+    ious = []
+    for cls in range(numclass):
+        clsx1 = x1 == cls
+        clsx2 = x2 == cls
+        inter = tf.reduce_sum(
+            tf.cast(tf.logical_and(clsx1, clsx2), tf.uint64),
+            axis=[1,2]
+        )
+        union = tf.reduce_sum( 
+            tf.cast(tf.logical_or(clsx1, clsx2),tf.uint64),
+            axis=[1,2]
+        )
+        iou = inter / union
+        ious.append(iou)
+    ious = tf.transpose(tf.stack(ious))
+    return ious
+
+class ImageIntersectionOverUnionMetric(Metric):
+    def __init__(self, num_classes):
+        self.num_classes = num_classes
+
+    def __call__(self, clean_scores, clean_labels, labels):
+        super().__init__(clean_scores, clean_labels, labels)
+        return self
+       
+    def clean_metric(self):
+        return compute_IOU(self.clean_scores, self.labels)
+        
+    def clean_output(self):
+       return [1] * self.num_classes
+
+    def faulty_output(self, faulty_scores):
+        return compute_IOU(
+            self.clean_scores,
+            faulty_scores,
+            self.num_classes
+        )
+
+def compute_pixel_accuracy(x1, x2):
+    x1 = tf.argmax(x1, axis=-1, output_type=tf.dtypes.uint16)
+    x2 = tf.argmax(x2, axis=-1, output_type=tf.dtypes.uint16)
+    diff = x1 == x2
+    totalPixels = x1.shape[0] * tf.math.reduce_prod( x1.shape[1:] )
+    correctPixels = tf.math.reduce_sum( 
+        tf.cast( diff, tf.int64 ),
+        axis = [1,2]
+    )
+    return correctPixels
+
+class PixelAccuracyMetric(Metric):
+    def __init__(self, clean_scores, clean_labels, labels):
+        super().__init__(clean_scores, clean_labels, labels)
+       
+    def clean_metric(self):
+        return compute_pixel_accuracy(self.clean_scores, self.labels)
+        
+    def clean_output(self):
+       return [1]
+
+    def faulty_output(self, faulty_scores):
+        return compute_pixel_accuracy(
+            self.clean_scores,
+            faulty_scores,
+        )

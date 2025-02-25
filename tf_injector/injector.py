@@ -1,6 +1,6 @@
 import tensorflow as tf  # type:ignore
 from tensorflow import keras  # type:ignore
-from tqdm import tqdm  # type:ignore
+from tqdm.auto import tqdm  # type:ignore
 
 import numpy as np
 import csv
@@ -8,7 +8,7 @@ import shutil
 
 from dataclasses import dataclass, field
 from contextlib import contextmanager
-from typing import Type 
+from typing import Type, Callable, Iterable
 
 from tf_injector.writer import CampaignWriter
 from tf_injector.utils import INJECTED_LAYERS_TYPES
@@ -88,7 +88,7 @@ not present in the network: {included_layers-target_layers}"
             iterable,
             colour="red" if faulty else "green",
             desc=desc,
-            ncols=shutil.get_terminal_size().columns,
+            # ncols=shutil.get_terminal_size().columns,
         )
     
     def validate(self):
@@ -133,7 +133,7 @@ not present in the network: {included_layers-target_layers}"
     def run_campaign(
         self,
         batch: int,
-        metric: Type[Metric],
+        metrics: Iterable[Type[Metric]],
         outputter: CampaignWriter,
         save_scores: bool = False,
     ):
@@ -144,30 +144,55 @@ not present in the network: {included_layers-target_layers}"
             metric: A Metric object whose metrics will be passed to the outputter
             outputter: CampaignWriter instance
             save_scores: whether save scores as numpy array (default=False)
+            inference_function: is the function that computes the outputs fomr the dataset
+            inference_function_args: the args to be passed to inference_function
         """
         if not self.faults.faults:
             raise RuntimeError(
                 "Attempting to run a campaign without a fault list loaded"
             )
-        gold_scores, labels = self.run_inference(batch)  # clean run
-        gold_labels = gold_scores.argmax(axis=1, keepdims=True)
-        metric_instance = metric(gold_scores, gold_labels, labels)
 
-        gold_output = (len(labels), *metric_instance.clean_output())
+        if not isinstance(metrics, Iterable):
+            metrics = [metrics]
+
+        print("running inference")
+        gold_scores, labels = self.run_inference(batch)  # clean run
+        print("running prediction")
+        gold_labels = tf.argmax(gold_scores, axis=1) #, keepdims=True)
+        gold_labels = tf.expand_dims(gold_scores, axis=1) # for compatibility with numpy's keepdims argument
+        metric_instances = [
+                metric(gold_scores, gold_labels, labels) for metric in metrics
+        ]
+
+        golden_values = []
+        for metric in metric_instances:
+            golden_values.extend(metric.clean_output())
+        gold_output = (len(labels), *golden_values)
         outputter.write_gold(gold_output)
         if save_scores:
             outputter.save_scores(gold_scores)
 
         fault_id = self.faults.resume_idx
         pbar = self._tqdm(self.faults.faults[fault_id:], False, "Injection")
+        print("Starting campaign...")
         for fault in pbar:
             with self._apply_fault(fault):
                 faulty_scores, labels = self.run_inference(batch)
+                metric_values = []
+                for metric in metric_instances:
+                    value = metric.faulty_output(faulty_scores)
+                    value = tf.cast(value, tf.double)
+                    if value.shape.rank == 1:
+                        value = tf.expand_dims(value, 1)
+                    metric_values.append(value)
+                
+                metric_values = tf.concat(metric_values, axis=1)
+
                 outputter.write_fault(
                     fault_id,
                     len(labels),
                     fault,
-                    metric_instance.faulty_output(faulty_scores),
+                    metric_values,
                 )
                 if save_scores:
                     outputter.save_scores(faulty_scores, inj_id=fault_id)
