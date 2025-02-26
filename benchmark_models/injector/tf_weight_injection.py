@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 import csv
 import torch
 from typing import Tuple
@@ -19,7 +22,6 @@ import struct
 from tqdm import tqdm
 import numpy as np
 import csv
-import os
 from datetime import datetime
 from natsort import natsorted
 
