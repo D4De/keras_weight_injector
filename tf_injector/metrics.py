@@ -81,13 +81,12 @@ class Metric(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def faulty_output(self, faulty_scores: np.ndarray) -> tuple:
+    def faulty_output(self, faulty_scores: np.ndarray, with_respect_to_golden=False) -> tuple:
         """
         This function will be called by the injector and provides the values that will
         be written in the report files in the faulty rows.
         """
         pass
-
 
 class ImageClassificationMetric(Metric):
     def __init__(self, clean_scores: np.ndarray, clean_labels: np.ndarray, labels: np.ndarray):
@@ -153,7 +152,10 @@ class ImageIntersectionOverUnionMetric(Metric):
     def clean_output(self):
        return [1] * self.num_classes
 
-    def faulty_output(self, faulty_scores):
+    def faulty_output(self, faulty_scores, with_respect_to_labels=False):
+        reference = self.clean_scores
+        if with_respect_to_labels:
+            reference = self.labels
         return compute_IOU(
             self.clean_scores,
             faulty_scores,
@@ -161,10 +163,10 @@ class ImageIntersectionOverUnionMetric(Metric):
         )
 
 def compute_pixel_accuracy(x1, x2):
-    x1 = tf.argmax(x1, axis=-1, output_type=tf.dtypes.uint16)
-    x2 = tf.argmax(x2, axis=-1, output_type=tf.dtypes.uint16)
+    # x1 = tf.argmax(x1, axis=-1, output_type=tf.dtypes.uint16)
+    # x2 = tf.argmax(x2, axis=-1, output_type=tf.dtypes.uint16)
     diff = x1 == x2
-    totalPixels = x1.shape[0] * tf.math.reduce_prod( x1.shape[1:] )
+    # totalPixels = x1.shape[0] * tf.math.reduce_prod( x1.shape[1:] )
     correctPixels = tf.math.reduce_sum( 
         tf.cast( diff, tf.int64 ),
         axis = [1,2]
@@ -173,6 +175,7 @@ def compute_pixel_accuracy(x1, x2):
 
 class PixelAccuracyMetric(Metric):
     def __init__(self, clean_scores, clean_labels, labels):
+        clean_scores = tf.argmax(clean_scores, axis=-1, output_type=tf.dtypes.uint16)
         super().__init__(clean_scores, clean_labels, labels)
        
     def clean_metric(self):
@@ -181,8 +184,12 @@ class PixelAccuracyMetric(Metric):
     def clean_output(self):
        return [1]
 
-    def faulty_output(self, faulty_scores):
+    def faulty_output(self, faulty_scores, with_respect_to_labels=False):
+        faulty_scores = tf.argmax(faulty_scores, axis=-1, output_type=tf.dtypes.uint16)
+        reference = self.clean_scores
+        if with_respect_to_labels:
+            reference = self.labels
         return compute_pixel_accuracy(
-            self.clean_scores,
+            reference,
             faulty_scores,
         )

@@ -136,6 +136,7 @@ not present in the network: {included_layers-target_layers}"
         metrics: Iterable[Type[Metric]],
         outputter: CampaignWriter,
         save_scores: bool = False,
+        metrics_on_labels: bool = False,
     ):
         """
         Runs a campaign with the loaded fault list
@@ -175,6 +176,8 @@ not present in the network: {included_layers-target_layers}"
         fault_id = self.faults.resume_idx
         pbar = self._tqdm(self.faults.faults[fault_id:], False, "Injection")
         print("Starting campaign...")
+        if metrics_on_labels:
+            print("NOTE: the metrics on labels are saved **AFTER** the metrics on golden")
         for fault in pbar:
             with self._apply_fault(fault):
                 faulty_scores, labels = self.run_inference(batch)
@@ -185,6 +188,16 @@ not present in the network: {included_layers-target_layers}"
                     if value.shape.rank == 1:
                         value = tf.expand_dims(value, 1)
                     metric_values.append(value)
+
+                    if metrics_on_labels:
+                        value_label = metric.faulty_output(
+                            faulty_scores,
+                            with_respect_to_labels=True
+                        )
+                        value_label = tf.cast(value_label, tf.double)
+                        if value_label.shape.rank == 1:
+                            value_label = tf.expand_dims(value_label, 1)
+                        metric_values.append(value_label)
                 
                 metric_values = tf.concat(metric_values, axis=1)
 
