@@ -175,16 +175,17 @@ some layers are not present in the network: {included_layers-target_layers}"
                 "Attempting to run a campaign without a fault list loaded"
             )
 
-        if not isinstance(metrics, Iterable):
-            metrics = [metrics]
+        # if not isinstance(metrics, Iterable):
+        #     metrics = [metrics]
 
         print("running inference")
         gold_scores, labels = self.run_inference(batch)  # clean run
         print("running prediction")
         gold_labels = tf.argmax(gold_scores, axis=1) #, keepdims=True)
-        gold_labels = tf.expand_dims(gold_scores, axis=1) # for compatibility with numpy's keepdims argument
+        gold_labels = tf.expand_dims(gold_labels, axis=1) # for compatibility with numpy's keepdims argument
         metric_instances = [
-                metric(None, gold_scores, labels) for metric in metrics
+            # metric(None, gold_scores, labels) for metric in metrics
+            metric(gold_scores, gold_labels, labels) for metric in metrics
         ]
 
         golden_values = []

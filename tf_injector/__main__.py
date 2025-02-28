@@ -117,7 +117,7 @@ def main(args):
         with CampaignWriter(args.dataset, args.network_name, report_header, args.output_path) as cw:
             injector.run_campaign(
                 batch=args.batch_size,
-                metric=metric,
+                metrics=[metric],
                 outputter=cw,
                 save_scores=args.save_scores,
             )

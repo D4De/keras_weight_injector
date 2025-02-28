@@ -81,7 +81,7 @@ class Metric(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def faulty_output(self, faulty_scores: np.ndarray, with_respect_to_golden=False) -> tuple:
+    def faulty_output(self, faulty_scores: tf.Tensor, with_respect_to_labels: bool = False) -> tuple:
         """
         This function will be called by the injector and provides the values that will
         be written in the report files in the faulty rows.
@@ -89,11 +89,12 @@ class Metric(metaclass=ABCMeta):
         pass
 
 class ImageClassificationMetric(Metric):
-    def __init__(self, clean_scores: np.ndarray, clean_labels: np.ndarray, labels: np.ndarray):
-        super().__init__(clean_scores, clean_labels, labels)
-        self.top_1_robustness = make_k_robustness(1, clean_labels)
-        self.top_5_robustness = make_k_robustness(5, clean_labels)
-        self.masked_counter = make_masked_counter(clean_scores)
+    def __init__(self, clean_scores: tf.Tensor, clean_labels: tf.Tensor, labels: tf.Tensor):
+        # TODO reimplement metrics using tf.Tensor
+        super().__init__(clean_scores.numpy(), clean_labels.numpy(), labels.numpy())
+        self.top_1_robustness = make_k_robustness(1, self.clean_labels)
+        self.top_5_robustness = make_k_robustness(5, self.clean_labels)
+        self.masked_counter = make_masked_counter(self.clean_scores)
 
 
     def clean_metric(self) -> tuple[int, ...]:
@@ -104,7 +105,8 @@ class ImageClassificationMetric(Metric):
         padding = [None]
         return (*metric, *(padding*4))
 
-    def faulty_output(self, faulty_scores: np.ndarray) -> tuple[int, ...]:
+    def faulty_output(self, faulty_scores: tf.Tensor, with_respect_to_labels:bool=False) -> tuple[int, ...]:
+        faulty_scores = faulty_scores.numpy()
         top_1_robust = self.top_1_robustness(faulty_scores)
         masked_count = self.masked_counter(faulty_scores)
 
