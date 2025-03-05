@@ -29,7 +29,11 @@ class Injector:
     performs fault injections on Tensorflow networks
     """
 
-    def __init__(self, network: keras.Model, dataset: tf.data.Dataset):
+    def __init__(self,
+                 network: keras.Model,
+                 dataset: tf.data.Dataset,
+                 transform_output: Callable = lambda x: x,
+                 ):
         """
         Args:
             network: the target network
@@ -46,6 +50,10 @@ class Injector:
         }
         self.faults = FaultList()
         self.faulty = False
+
+        # Note: if necessary, transform_output can do the type cast from 
+        # tensorflow to numpy
+        self.transform_output = transform_output
 
     def load_fault_list(self, fault_path: str, resume_from: int = 0):
         """
@@ -84,10 +92,10 @@ class Injector:
             assert (
                 len(not_in_network) == 0
             ), f"Fault layers and target layers didn't match: \n \
-not included in the fault list: {target_layers-included_layers} \n \
-not present in the network: {included_layers-target_layers}"
+some layers are not present in the network: {included_layers-target_layers}"
             
 
+    # TODO: remove this method. Just use tqdm as is in the appropriate points
     @staticmethod
     def _tqdm(iterable, faulty: bool, desc: str, position: int) -> tqdm:
         return tqdm(
@@ -95,6 +103,7 @@ not present in the network: {included_layers-target_layers}"
             colour="red" if faulty else "green",
             desc=desc,
             position = position,
+            leave=True,
             # ncols=shutil.get_terminal_size().columns,
         )
     
@@ -109,7 +118,8 @@ not present in the network: {included_layers-target_layers}"
             assert 0<=bitpos<32
 
     def _run_inference_on_batch(self, data):
-        return self.network(data)
+        output = self.network(data)
+        return self.transform_output(output)
 
     def run_inference(self, batch: int):
         """
@@ -123,14 +133,18 @@ not present in the network: {included_layers-target_layers}"
         """
         batched = self.dataset.batch(batch)
         # pbar = self._tqdm(batched, False, "Dataset Inference", 1)
-        pbar = tqdm(batched, desc="Dataset Inference", leave=False, colour="green")
+        pbar = tqdm(
+            batched,
+            leave=False, 
+            desc = "Dataset Inference",
+            colour = "green",
+        )
         # pbar = batched
         batch_predictions = []
         batch_labels = []
         for batch in pbar:
             data, label = batch
-            out = self._run_inference_on_batch(data)[0]
-            out = tf.cast( tf.argmax(out, axis=-1), tf.uint8)
+            out = self._run_inference_on_batch(data)
             batch_predictions.append(out)
             batch_labels.append(label)
 
@@ -161,16 +175,16 @@ not present in the network: {included_layers-target_layers}"
                 "Attempting to run a campaign without a fault list loaded"
             )
 
-        if not isinstance(metrics, Iterable):
-            metrics = [metrics]
+        # if not isinstance(metrics, Iterable):
+        #     metrics = [metrics]
 
         print("running inference")
         gold_scores, labels = self.run_inference(batch)  # clean run
         print("running prediction")
         gold_labels = tf.argmax(gold_scores, axis=1) #, keepdims=True)
-        gold_labels = tf.expand_dims(gold_scores, axis=1) # for compatibility with numpy's keepdims argument
+        gold_labels = tf.expand_dims(gold_labels, axis=1) # for compatibility with numpy's keepdims argument
         metric_instances = [
-                metric(None, gold_scores, labels) for metric in metrics
+            metric(gold_scores, gold_labels, labels) for metric in metrics
         ]
 
         golden_values = []
@@ -185,7 +199,12 @@ not present in the network: {included_layers-target_layers}"
 
         fault_id = self.faults.resume_idx
         # pbar = self._tqdm(self.faults.faults[fault_id:], True, "Injection", 0)
-        pbar = tqdm(self.faults.faults[fault_id:], leave=True, desc="Injection")
+        pbar = tqdm(
+            self.faults.faults[fault_id:],
+            colour = "red", # because it's injected 
+            leave=True,
+            desc = "Injection"
+        )
         print("Starting campaign...")
         if metrics_on_labels:
             print("NOTE: the metrics on labels are saved **AFTER** the metrics on golden")

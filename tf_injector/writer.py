@@ -36,6 +36,14 @@ class CampaignWriter:
     def __enter__(self) -> "CampaignWriter":
         write_header = not os.path.exists(self.filepath)
         self.file = open(self.filepath, "a")
+        # TODO: Use pandas rather than csv
+        # The reason behind using pandas is that some metrics
+        # (like IOU, a.k.a. jaccard index) have a lot of nans
+        # (not a numbers) in the output. With pandas they are
+        # treated like empty bytes, which saves lots of space
+        # and, apparently isn't possibile to do the same with
+        # the library csv.
+        # pandas has the option of appending to file.
         self.writer = csv.writer(self.file)
         if write_header:
             self.writer.writerow(self.report_header)
@@ -77,6 +85,8 @@ class CampaignWriter:
             fault_metrics_str.append(newRow) """
         
         if not self.one_line_per_input:
+            # patch: fault_metrics is a 2D tf.Tensor of float -> convert to a list of integers
+            fault_metrics = list(fault_metrics.numpy().T[0].astype(np.uint32))
             row = (fault_id, *fault, num_injections, *fault_metrics)
             self.writer.writerow(row) 
         else:
