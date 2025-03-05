@@ -67,6 +67,15 @@ class CampaignWriter:
         fault: tuple[int, ...],
         fault_metrics: tuple[int, ...],
     ):
+       
+        """ fault_metrics_str = []
+        for row in fault_metrics:
+            newRow = list( filter( 
+                lambda x: None if 'nan' in x else x, # filter out nans and subsitute with empty strings
+                [ str(value) for value in row.numpy().tolist() ] # convert the numpy values to str
+            ))
+            fault_metrics_str.append(newRow) """
+        
         if not self.one_line_per_input:
             row = (fault_id, *fault, num_injections, *fault_metrics)
             self.writer.writerow(row) 
@@ -78,7 +87,7 @@ class CampaignWriter:
                     *fault,
                     i,
                     num_injections,
-                    *[ *fault_metrics[i].numpy().tolist() ],
+                    *[ *fault_metrics[i].numpy().tolist() ], # *fault_metrics_str[i],
                 ])
             self.writer.writerows(rows)
 

@@ -1,8 +1,7 @@
+import numpy as np
 import tensorflow as tf  # type:ignore
 from tensorflow import keras  # type:ignore
 from tqdm.auto import tqdm  # type:ignore
-
-import numpy as np
 import csv
 import shutil
 
@@ -76,18 +75,26 @@ class Injector:
 
         # all target layers are in injection list
         target_layers = set(self.target_layers.keys())
-        assert (
-            target_layers == included_layers
-        ), f"Fault layers and target layers didn't match: \n \
+        if target_layers != included_layers:
+            not_in_fault_list = target_layers - included_layers
+            not_in_network = included_layers - target_layers
+            if len(not_in_fault_list) > 0:
+                print(f"WARNING: Some layers are not included in the fault list: {not_in_fault_list}")
+
+            assert (
+                len(not_in_network) == 0
+            ), f"Fault layers and target layers didn't match: \n \
 not included in the fault list: {target_layers-included_layers} \n \
 not present in the network: {included_layers-target_layers}"
+            
 
     @staticmethod
-    def _tqdm(iterable, faulty: bool, desc: str) -> tqdm:
+    def _tqdm(iterable, faulty: bool, desc: str, position: int) -> tqdm:
         return tqdm(
             iterable,
             colour="red" if faulty else "green",
             desc=desc,
+            position = position,
             # ncols=shutil.get_terminal_size().columns,
         )
     
@@ -101,10 +108,10 @@ not present in the network: {included_layers-target_layers}"
             assert all(map(lambda t: t[0]<t[1], zip(coords, target_shape))), f"ERROR: index overflow at fault {index} {coords} vs {target_shape}"
             assert 0<=bitpos<32
 
-    def _run_inference_on_batch(self, data) -> np.ndarray:
-        return self.network(data).numpy()
+    def _run_inference_on_batch(self, data):
+        return self.network(data)
 
-    def run_inference(self, batch: int) -> tuple[np.ndarray, np.ndarray]:
+    def run_inference(self, batch: int):
         """
         Runs an inference on the target network.
         Args:
@@ -115,19 +122,20 @@ not present in the network: {included_layers-target_layers}"
             in the second.
         """
         batched = self.dataset.batch(batch)
-        # pbar = self._tqdm(
-        #    batched, self.faulty, "Faulty run" if self.faulty else "Clean run"
-        # )
-        pbar = batched
-        batch_predictions: list[np.ndarray] = []
-        batch_labels: list[np.ndarray] = []
+        # pbar = self._tqdm(batched, False, "Dataset Inference", 1)
+        pbar = tqdm(batched, desc="Dataset Inference", leave=False, colour="green")
+        # pbar = batched
+        batch_predictions = []
+        batch_labels = []
         for batch in pbar:
             data, label = batch
-            batch_predictions.append(self._run_inference_on_batch(data))
-            batch_labels.append(label.numpy())
+            out = self._run_inference_on_batch(data)[0]
+            out = tf.cast( tf.argmax(out, axis=-1), tf.uint8)
+            batch_predictions.append(out)
+            batch_labels.append(label)
 
-        predictions = np.concatenate(batch_predictions, axis=0)
-        labels = np.concatenate(batch_labels, axis=0)
+        predictions = tf.concat(batch_predictions, axis=0)
+        labels = tf.concat(batch_labels, axis=0)
         return predictions, labels
 
     def run_campaign(
@@ -162,19 +170,22 @@ not present in the network: {included_layers-target_layers}"
         gold_labels = tf.argmax(gold_scores, axis=1) #, keepdims=True)
         gold_labels = tf.expand_dims(gold_scores, axis=1) # for compatibility with numpy's keepdims argument
         metric_instances = [
-                metric(gold_scores, gold_labels, labels) for metric in metrics
+                metric(None, gold_scores, labels) for metric in metrics
         ]
 
         golden_values = []
         for metric in metric_instances:
             golden_values.extend(metric.clean_output())
+            if metrics_on_labels:
+                golden_values.extend(metric.clean_output())
         gold_output = (len(labels), *golden_values)
         outputter.write_gold(gold_output)
         if save_scores:
             outputter.save_scores(gold_scores)
 
         fault_id = self.faults.resume_idx
-        pbar = self._tqdm(self.faults.faults[fault_id:], False, "Injection")
+        # pbar = self._tqdm(self.faults.faults[fault_id:], True, "Injection", 0)
+        pbar = tqdm(self.faults.faults[fault_id:], leave=True, desc="Injection")
         print("Starting campaign...")
         if metrics_on_labels:
             print("NOTE: the metrics on labels are saved **AFTER** the metrics on golden")
@@ -230,7 +241,7 @@ not present in the network: {included_layers-target_layers}"
         """
         target_layer_name, coords, bitpos = fault
         target_layer = self.target_layers[target_layer_name]
-        bitmask = np.uint32(1) << bitpos
+        bitmask = tf.bitwise.left_shift(1, bitpos)
         layer_weights = target_layer.get_weights()
         target_weights = layer_weights[0].view(dtype=np.uint32)
         # clean_value = target_weights[coords] # for assert test

@@ -49,6 +49,15 @@ REPORT_HEADER = (
     "n_injections",
 )
 
+REPORT_HEADER_ONE_LINE_PER_INPUT = (
+    "inj_id",
+    "target_layer",
+    "layer_weigths",
+    "bit_pos",
+    "input_id",
+    "n_injections",
+)
+
 IMAGE_CLASSIFICATION_REPORT_HEADER = REPORT_HEADER + (
     "top_1_correct",
     "top_5_correct",
@@ -58,6 +67,21 @@ IMAGE_CLASSIFICATION_REPORT_HEADER = REPORT_HEADER + (
     "non_critical",
     "critical",
 )
+
+
+def IMAGE_SEMGENTATION_REPORT_HEADER(nclasses):
+    return REPORT_HEADER_ONE_LINE_PER_INPUT + (
+        "pixel_accuracy",
+        *(f"IOU_{i}" for i in range(nclasses))
+    )
+
+def IMAGE_SEMGENTATION_REPORT_HEADER_WITH_GOLDEN(nclasses):
+    return REPORT_HEADER_ONE_LINE_PER_INPUT + (
+        "pixel_accuracy_golden",
+        "pixel_accuracy_label",
+        *(f"IOU_golden_{i}" for i in range(nclasses))
+        *(f"IOU_label_{i}" for i in range(nclasses))
+    )
 
 DEFAULT_REPORT_DIR = MODULE_PATH / "../reports"
 
