@@ -199,3 +199,12 @@ By enabling the `--save-outputs` flag, inference outputs are saved as numpy arra
 |        10000 |  10000 |            0 |        0 |
 |        10000 |  10000 |            3 |        0 |
 
+## Tools
+Additional tools are placed in the `tools` folder.
+
+### `compute_mean.py`
+Prints to stdout the mean of each column of a report file. The Pandas library is required.
+Usage:
+```
+python tools/compute_mean.py path/to/report.csv
+```
