@@ -8,15 +8,6 @@ import sys
 def get_dirs(dir):
     return (d.__fspath__() for d in os.scandir(dir) if d.is_dir())
 
-
-def test_all(base_dir):
-    datasets = get_dirs(base_dir)
-    models = {dataset: get_dirs(dataset) for dataset in datasets}
-    for dt in models:
-        for model in models[dt]:
-            test(model)
-
-
 def get_injection_id(filename):
     if "clean" in filename:
         return -1

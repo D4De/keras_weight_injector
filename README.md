@@ -208,3 +208,6 @@ Usage:
 ```
 python tools/compute_mean.py path/to/report.csv
 ```
+
+## Testing
+The folder `testing` contains testing utilities to validate the result of the injector. Read the dedicated README for more information.
