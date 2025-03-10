@@ -168,7 +168,7 @@ def compute_pixel_accuracy(x1, x2):
     diff = x1 == x2
     # totalPixels = x1.shape[0] * tf.math.reduce_prod( x1.shape[1:] )
     correctPixels = tf.math.reduce_sum( 
-        tf.cast( diff, tf.int64 ),
+        tf.cast(diff, np.uint64),
         axis = [1,2]
     )
     return correctPixels

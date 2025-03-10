@@ -33,11 +33,14 @@ class Injector:
                  network: keras.Model,
                  dataset: tf.data.Dataset,
                  transform_output: Callable = lambda x: x,
+                 transform_label: Callable = lambda x: x,
                  ):
         """
         Args:
             network: the target network
             dataset: the dataset on which the inferences are executed
+            transform_output: this is a transformation applied to the output of the network for each batched inference
+            transform_label: a transform applied to the labels after they are gatherd from the dataset. Useful mainly for the metrics.
         """
         self.network = network
         self.dataset = dataset
@@ -54,6 +57,7 @@ class Injector:
         # Note: if necessary, transform_output can do the type cast from 
         # tensorflow to numpy
         self.transform_output = transform_output
+        self.transform_label = transform_label
 
     def load_fault_list(self, fault_path: str, resume_from: int = 0):
         """
@@ -143,7 +147,7 @@ some layers are not present in the network: {included_layers-target_layers}"
         batch_predictions = []
         batch_labels = []
         for batch in pbar:
-            data, label = batch
+            data, label = batch #NOTE: what is called label here, generally has the name of gold_scores
             out = self._run_inference_on_batch(data)
             batch_predictions.append(out)
             batch_labels.append(label)
@@ -181,8 +185,13 @@ some layers are not present in the network: {included_layers-target_layers}"
         print("running inference")
         gold_scores, labels = self.run_inference(batch)  # clean run
         print("running prediction")
+        # TODO: generalize this piece to have a function to compute the labels!!!
+        # As is, it doesn't work with both image classification and segmentation.
+        # The code here should use the same self.transform_output to take the labels 
+        # from the gold_scores!!!
         gold_labels = tf.argmax(gold_scores, axis=1) #, keepdims=True)
         gold_labels = tf.expand_dims(gold_labels, axis=1) # for compatibility with numpy's keepdims argument
+        gold_labels = self.transform_label(gold_labels) # Arbitrary transformation for the metrics
         metric_instances = [
             metric(gold_scores, gold_labels, labels) for metric in metrics
         ]
