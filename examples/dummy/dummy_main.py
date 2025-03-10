@@ -2,12 +2,12 @@ import numpy as np
 import dummy_dataset as utils 
 import tensorflow as tf
 
-from importlib import reload
-
+# We do the assumption that tf_injector is not installed in your system. 
+# To make it work anyways, we manually add the path of the injector to the PYTHONPATH
+# For more info: https://docs.python.org/3/using/cmdline.html#environment-variables
+import sys
+sys.path.append("../../")
 import tf_injector as kwi 
-
-reload(kwi)
-reload(kwi.injector)
 
 keras = tf.keras
 
@@ -28,18 +28,22 @@ def get_label(out):
     out = tf.argmax(out, axis=-1)
     return tf.cast(out, tf.uint8)
 
+def label_to_uint8(label):
+    return tf.cast(label, tf.uint8)
+
 # prepare the injector
 injector = kwi.Injector(
     model,
     dataloader,
     transform_output = get_label,
+    transform_label = label_to_uint8,
 )
 
 # load the fault list 
 injector.load_fault_list("dummy_keras_fault_list.csv")
 
 #validate the fault list
-# injector.validate()
+injector.validate()
 
 batch_size = 2
 
