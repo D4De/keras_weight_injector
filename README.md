@@ -48,6 +48,12 @@ pip3 install torch torchvision torchaudio --index-url https://download.pytorch.o
 ./download_models.sh
 ```
 
+## Prerequisites 
+
+Before running inferences, install the needed packages and tools
+```
+pip install -r requirements.txt
+```
 
 ## Getting Started
 
