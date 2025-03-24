@@ -1,5 +1,5 @@
 # tf_injector
-This project contains a tool for injecting faults in the weights of TensorFlow models and used for the experiments supporting the benchmark suite in [dnn-benchmarks](https://github.com/cad-polito-it/dnn-benchmarks).
+This project contains a tool for injecting faults in the weights of TensorFlow models and used for the experiments supporting the benchmark suite in [dnn-benchmarks](https://gitlab.pmcs2i.ec-lyon.fr/spappala/dnn-benchmarks).
 
 ## Project Collaboration
 
@@ -17,12 +17,12 @@ source venv_name/bin/activate
 ```
 pip install -r requirements.txt
 ```
-4. The pretrained models are available in the repository [dnn-benchmarks](https://github.com/cad-polito-it/dnn-benchmarks). Read the repository's `README` for more information.
+4. The pretrained models are available in the repository [dnn-benchmarks](https://gitlab.pmcs2i.ec-lyon.fr/spappala/dnn-benchmarks). Read the repository's `README` for more information.
 5. Given a .keras file trained on a dataset, move it to the `models/dataset_name/` folder. For instance, a ResNet18.keras file trained on the CIFAR10 dataset will be placed in `models/CIFAR10/`.
 
 ## Tested Models
 
-We have tested the fault injector on the models contained in (cad-polito-it/dnn-benchmarks)[https://github.com/cad-polito-it/dnn-benchmarks]. In particular:
+We have tested the fault injector on the models contained in [dnn-benchmarks](https://gitlab.pmcs2i.ec-lyon.fr/spappala/dnn-benchmarks). In particular:
 
 - CIFAR10
     - DenseNet
@@ -39,6 +39,8 @@ We have tested the fault injector on the models contained in (cad-polito-it/dnn-
     - DenseNet
     - Resnet
     - Vgg
+- PascalVOC
+    - DeepLabV3  
 
 ## Dataset transformation
 > [!NOTE]
