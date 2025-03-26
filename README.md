@@ -41,19 +41,8 @@ additional problems)
 ```
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 ```
-
-
-5. Download the pretrained networks by running
-```
-./download_models.sh
-```
-
-## Prerequisites 
-
-Before running inferences, install the needed packages and tools
-```
-pip install -r requirements.txt
-```
+5. Gather the pretrained models folder (it must be named `pretrained_models`) and place it inside
+`benchmark_models/models/`
 
 ## Getting Started
 
