@@ -41,8 +41,19 @@ additional problems)
 ```
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 ```
-5. Gather the pretrained models folder (it must be named `pretrained_models`) and place it inside
-`benchmark_models/models/`
+## Pretrained models
+Pretrained weights are stored inside the `benchmark_models/models/pretrained_models` folder.
+
+### Torch weights
+Given a Torch model (for instance ResNet20 trained for CIFAR10), move the weights to `benchmark_models/models/pretrained_models/CIFAR10/ResNet20.pt`.
+
+In general, a Torch model called M for a dataset D will be seeked by the injector in the path `benchmark_models/models/pretrained_models/D/M.pt`.
+Several Torch extension are supported (pt, th, ...).
+
+### Keras weights
+Given a Keras model (for instance ResNet20 for CIFAR10), place the weights inside `benchmark_models/models/converted-tf/CIFAR10/ResNet20.pt`.
+
+In general, a Keras model called M for a dataset D will be seeked by the injector in the path `benchmark_models/models/converted_tf/D/M.keras`.
 
 ## Getting Started
 
