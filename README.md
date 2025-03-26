@@ -51,9 +51,9 @@ In general, a Torch model called M for a dataset D will be seeked by the injecto
 Several Torch extension are supported (pt, th, ...).
 
 ### Keras weights
-Given a Keras model (for instance ResNet20 for CIFAR10), place the weights inside `benchmark_models/models/converted-tf/CIFAR10/ResNet20.pt`.
+Given a Keras model (for instance ResNet20 for CIFAR10), place the weights inside `benchmark_models/models/converted-tf/CIFAR10/ResNet20.keras`.
 
-In general, a Keras model called M for a dataset D will be seeked by the injector in the path `benchmark_models/models/converted_tf/D/M.keras`.
+In general, a Keras model called M for a dataset D will be seeked by the injector in the path `benchmark_models/models/converted-tf/D/M.keras`.
 
 ## Getting Started
 
