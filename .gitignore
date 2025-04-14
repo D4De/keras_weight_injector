@@ -166,3 +166,5 @@ container_reports
 tmp
 classes_models
 benchmark_models/faultlists/test_faultists
+
+local_scripts/
