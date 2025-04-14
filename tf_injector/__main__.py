@@ -4,6 +4,7 @@ import tensorflow as tf  # type:ignore
 import ast
 import os
 import shutil
+import json
 
 from tf_injector.utils import SUPPORTED_MODELS, SUPPORTED_DATASETS, DEFAULT_REPORT_DIR, IMAGE_CLASSIFICATION_REPORT_HEADER
 from tf_injector.loader import load_network
@@ -248,8 +249,23 @@ def lddataset(args):
 
     destination_file = os.path.join(target_dir, os.path.basename(path))
     shutil.copy2(path, destination_file)
-    print(f"Added new loading function: {path} → {destination_file}")
+    print(f"Added new loading fuunction file: {path} → {destination_file}")
+
+    # create/modify data.jsonv putting loader name of the function
+    for file in os.listdir(target_dir):
+        if file.endswith('.json'):
+            file_path = os.path.join(target_dir, file)
+            os.remove(file_path)
+            #print(f"Deleted file: {file_path}")
     
+    json_file_path = os.path.join(target_dir, f"config.json")
+    loader_data = {"loader_name": function_name}
+
+    with open(json_file_path, 'w') as json_file:
+        json.dump(loader_data, json_file, indent=4)
+
+    print(f"loading function for dataset {name}: {function_name}")
+
     return
 
 def ldmetric(args):
