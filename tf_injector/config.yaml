@@ -1,6 +1,0 @@
-# campaign_config.yaml
-campaign:
-  loader : 
-  metrics : []
-  preprocessing: "identity"  
-  outputter: "CampaignWriter"

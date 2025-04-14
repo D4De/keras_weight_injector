@@ -11,6 +11,7 @@ from tf_injector.loader import load_network
 from tf_injector.injector import Injector
 from tf_injector.metrics import ImageClassificationMetric
 from tf_injector.writer import CampaignWriter
+from tf_injector.Campaign import Campaign
 
 
 
@@ -208,6 +209,15 @@ def run_old(args):
 def run(args):
     if args.metrics:
         metrics_list = args.metrics.split(',')
+
+    campaign = Campaign(
+        dataset_name = args.dataset,
+        network_path = args.model,
+        fautl_list_path = args.fault_list,
+        preporcessig = lambda x: x,   # (tf.data.Dataset) -> tf.data.Dataset
+        metrics = metrics_list,
+    )
+    campaign.run()
     return
 
 def lddataset(args):
