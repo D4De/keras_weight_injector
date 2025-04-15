@@ -96,7 +96,7 @@ class Injector:
             assert (
                 len(not_in_network) == 0
             ), f"Fault layers and target layers didn't match: \n \
-some layers are not present in the network: {included_layers-target_layers}"
+            some layers are not present in the network: {included_layers-target_layers}"
             
 
     # TODO: remove this method. Just use tqdm as is in the appropriate points

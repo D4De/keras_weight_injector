@@ -3,6 +3,8 @@ from typing import List
 import tensorflow as tf
 import importlib.util
 import json
+from tf_injector.injector import Injector
+from tf_injector.faultlist import FaultList
 
 # Definisci la directory per i plugin utente
 USER_PLUGINS_DIR = os.path.join(os.path.dirname(__file__), 'user')
@@ -21,7 +23,8 @@ class Campaign:
         self.network_path = network_path
         self.dataset = self.__load_dataset() # tf.data.Dataset
         self.network = self.__load_network()
-        self.fault_list_path = None
+        self.fault_list_path = fautl_list_path
+        self.fault_list = self.__load_fault_list()
         self.preprocessig = preporcessig
         self.metrics = metrics if metrics is not None else []
         self.injector = None
@@ -73,10 +76,28 @@ class Campaign:
 
         return tf.keras.models.load_model(self.network_path)
     
+    def __load_fault_list(self) -> FaultList :
+        return
+    
+    @staticmethod
+    def __validate_fault_list(FaultList) -> bool:
+        return True
+
     def run(self):
         print("-------------------------------------------------------------")
         print("Running campaign...")
+
+        injector = Injector(
+            self.network,
+            self.dataset,
+        )
+
+        # gold label
+        # injector.run_gold_label()
+
+        # injection
+        
+
         print("-------------------------------------------------------------")
         return
-    
     

@@ -11,7 +11,7 @@ from tf_injector.loader import load_network
 from tf_injector.injector import Injector
 from tf_injector.metrics import ImageClassificationMetric
 from tf_injector.writer import CampaignWriter
-from tf_injector.Campaign import Campaign
+from tf_injector.campaign import Campaign
 
 
 
