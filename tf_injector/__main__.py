@@ -120,34 +120,39 @@ def parse_args():
         )
 
     # Comando RUN (to confing a custom campaign)
-    load_parser = subparsers.add_parser('run', help='Run campaign')
-    load_parser.add_argument(
+    run_parser = subparsers.add_parser('run', help='Run campaign')
+    run_parser.add_argument(
         '--dataset', 
         '-d', 
         required=True, 
         help='name of the dataset'
         ) 
-    load_parser.add_argument(
+    run_parser.add_argument(
         '--preprocessing', 
         '-p', 
         help='Preprocessing function'
         )
-    load_parser.add_argument(
+    run_parser.add_argument(
         '--metrics', 
         '-met', 
         required=True, 
         help='Metriche da utilizzare'
         )
-    load_parser.add_argument(
+    run_parser.add_argument(
         '--fault_list', 
         '-fl', 
         help='path to the fault list'
         )
-    load_parser.add_argument(
+    run_parser.add_argument(
         '--model', 
         '-m', 
         required=True, 
         help='path to the model'
+        )
+    run_parser.add_argument(
+        '--output_path', 
+        '-o',  
+        help='path for the injection report'
         )
 
     # Comando SHOW
@@ -208,11 +213,12 @@ def run_old(args):
 
 def run(args):
     if args.metrics:
-        metrics_list = args.metrics.split(',')
+        metrics_list = args.metrics.replace(" ", "").split(",")
 
     campaign = Campaign(
         dataset_name = args.dataset,
         network_path = args.model,
+        output_path = args.output_path,
         fautl_list_path = args.fault_list,
         preporcessig = lambda x: x,   # (tf.data.Dataset) -> tf.data.Dataset
         metrics = metrics_list,

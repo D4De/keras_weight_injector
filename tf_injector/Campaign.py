@@ -1,10 +1,12 @@
 import os
 from typing import List
 import tensorflow as tf
+from tensorflow import keras
 import importlib.util
 import json
 from tf_injector.injector import Injector
 from tf_injector.faultlist import FaultList
+from tf_injector.writer import CampaignWriter
 
 # Definisci la directory per i plugin utente
 USER_PLUGINS_DIR = os.path.join(os.path.dirname(__file__), 'user')
@@ -15,6 +17,7 @@ class Campaign:
         dataset_name : str, # () -> tf.data.Dataset
         network_path : str,
         fautl_list_path : str,
+        output_path : str,
         preporcessig: callable = lambda x: x,   # (tf.data.Dataset) -> tf.data.Dataset
         metrics: List[str] = None,
     ):
@@ -23,8 +26,12 @@ class Campaign:
         self.network_path = network_path
         self.dataset = self.__load_dataset() # tf.data.Dataset
         self.network = self.__load_network()
-        self.fault_list_path = fautl_list_path
-        self.fault_list = self.__load_fault_list()
+
+        # load fault list
+        self.fault_list = FaultList()
+        included_layers = self.fault_list.load_from_csv(fautl_list_path)
+
+        self.output_path = output_path
         self.preprocessig = preporcessig
         self.metrics = metrics if metrics is not None else []
         self.injector = None
@@ -76,26 +83,57 @@ class Campaign:
 
         return tf.keras.models.load_model(self.network_path)
     
-    def __load_fault_list(self) -> FaultList :
-        return
-    
-    @staticmethod
-    def __validate_fault_list(FaultList) -> bool:
-        return True
+    def __validate_fault_list(self, included_layers : set[str]) -> None:
+        
+        INJECTED_LAYERS_TYPES = (keras.layers.Conv2D, keras.layers.Dense)
+
+        target_layers: dict[str, keras.Layer] = {
+            layer.name: layer
+            for layer in self.network._flatten_layers(
+                include_self=False, 
+                recursive=True
+            )  # extracts all layers
+            if isinstance(layer, INJECTED_LAYERS_TYPES)
+        }
+
+        target_layers = set(self.target_layers.keys())
+
+        if target_layers != included_layers:
+            not_in_fault_list = target_layers - included_layers
+            not_in_network = included_layers - target_layers
+            if len(not_in_fault_list) > 0:
+                print(f"WARNING: Some layers are not included in the fault list: {not_in_fault_list}")
+
+            assert (
+                len(not_in_network) == 0
+            ), f"Fault layers and target layers didn't match: \n \
+            some layers are not present in the network: {included_layers-target_layers}"
+
 
     def run(self):
         print("-------------------------------------------------------------")
         print("Running campaign...")
 
         injector = Injector(
-            self.network,
-            self.dataset,
+            network = self.network,
+            dataset = self.dataset,
+            faluts = self.fault_list
         )
 
-        # gold label
-        # injector.run_gold_label()
+        network_name = os.path.basename(self.network_path)
+        cw = CampaignWriter(
+            self.dataset_name, 
+            network_name, 
+            self.output_path
+            )
 
-        # injection
+        injector.run_campaign(
+            batch = 512,
+            metrics = self.metrics,
+            outputter = cw,
+            save_scores = False,
+            metrics_on_labels = False,
+        )
         
 
         print("-------------------------------------------------------------")

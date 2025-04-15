@@ -34,6 +34,7 @@ class Injector:
                  dataset: tf.data.Dataset,
                  transform_output: Callable = lambda x: x,
                  transform_label: Callable = lambda x: x,
+                 faluts : FaultList = None,
                  ):
         """
         Args:
@@ -51,7 +52,7 @@ class Injector:
             )  # extracts all layers
             if isinstance(layer, INJECTED_LAYERS_TYPES)
         }
-        self.faults = FaultList()
+        self.faults = faluts
         self.faulty = False
 
         # Note: if necessary, transform_output can do the type cast from 
