@@ -8,6 +8,10 @@ from tf_injector.injector import Injector
 from tf_injector.faultlist import FaultList
 from tf_injector.writer import CampaignWriter
 
+# mtrics
+from tf_injector.metrics import ImageClassificationMetric
+
+
 # Definisci la directory per i plugin utente
 USER_PLUGINS_DIR = os.path.join(os.path.dirname(__file__), 'user')
 
@@ -30,6 +34,7 @@ class Campaign:
         # load fault list
         self.fault_list = FaultList()
         included_layers = self.fault_list.load_from_csv(fautl_list_path)
+        self.__validate_fault_list(included_layers)
 
         self.output_path = output_path
         self.preprocessig = preporcessig
@@ -96,7 +101,7 @@ class Campaign:
             if isinstance(layer, INJECTED_LAYERS_TYPES)
         }
 
-        target_layers = set(self.target_layers.keys())
+        target_layers = set(target_layers.keys())
 
         if target_layers != included_layers:
             not_in_fault_list = target_layers - included_layers
@@ -126,16 +131,17 @@ class Campaign:
             network_name, 
             self.output_path
             )
-
-        injector.run_campaign(
-            batch = 512,
-            metrics = self.metrics,
-            outputter = cw,
-            save_scores = False,
-            metrics_on_labels = False,
-        )
+        
+        with cw :
+            injector.run_campaign(
+                batch = 512,
+                #metrics = self.metrics,
+                metrics = [ImageClassificationMetric],
+                outputter = cw,
+                save_scores = True,
+                metrics_on_labels = False,
+            )
         
 
         print("-------------------------------------------------------------")
         return
-    

@@ -151,8 +151,8 @@ def parse_args():
         )
     run_parser.add_argument(
         '--output_path', 
-        '-o',  
-        help='path for the injection report'
+        '-o', 
+        help='the campaign report will be saved here'
         )
 
     # Comando SHOW
