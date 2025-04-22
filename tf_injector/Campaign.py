@@ -10,9 +10,6 @@ from tf_injector.writer import CampaignWriter
 from tf_injector.new_metrics.metric import Metric
 
 
-# Definisci la directory per i plugin utente
-USER_PLUGINS_DIR = os.path.join(os.path.dirname(__file__), 'user')
-
 class Campaign:
     def __init__(
         self,
@@ -133,10 +130,10 @@ class Campaign:
                 metric_class = getattr(module, metric)
 
                 # create instance of the class
-                metric_object = metric_class()
+                #metric_object = metric_class()
 
                 # add class to the list
-                metrics.append(metric_object)
+                metrics.append(metric_class)
             else:
                 print(f"WARNING: Metric ({metric}) not found")
             
@@ -156,9 +153,18 @@ class Campaign:
 
         network_name = os.path.basename(self.network_path)
         cw = CampaignWriter(
-            self.dataset_name, 
-            network_name, 
-            self.output_path
+            dataset = self.dataset_name, 
+            network = network_name, 
+            report_header= (
+                "col1",
+                "col2",
+                "col3",
+                "col4",
+                "col5",
+                "col6",
+                "col7"
+            ),
+            file_dir = self.output_path
             )
         
         with cw :

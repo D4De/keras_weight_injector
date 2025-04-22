@@ -223,8 +223,7 @@ def run(args):
         preporcessig = lambda x: x,   # (tf.data.Dataset) -> tf.data.Dataset
         metrics_list = metrics_list,
     )
-    #campaign.run()
-    campaign.debug()
+    campaign.run()
     return
 
 def lddataset(args):

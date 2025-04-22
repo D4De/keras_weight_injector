@@ -2,7 +2,7 @@ import sys
 # We do the assumption that tf_injector is not installed in your system. 
 # To make it work anyways, we manually add the path of the injector to the PYTHONPATH
 # For more info: https://docs.python.org/3/using/cmdline.html#environment-variables
-sys.path.append("../../")
+sys.path.append("/Users/domenicopalumbo/keras_weight_injector")
 import tf_injector as kwi 
 
 from tqdm.auto import tqdm
@@ -60,7 +60,7 @@ def target_transform(x):
     return x
 
 dataset = VOCDataset(
-    root_dir="VOCdevkit/VOC2012/",
+    root_dir="Users/domenicopalumbo/Documents/VOCdevkit/VOC2012/",
     which_split="val",
     classes = VOCDataset.PASCAL_CLASSES,
     transform = transform_tf,
