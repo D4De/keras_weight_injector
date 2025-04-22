@@ -221,9 +221,10 @@ def run(args):
         output_path = args.output_path,
         fautl_list_path = args.fault_list,
         preporcessig = lambda x: x,   # (tf.data.Dataset) -> tf.data.Dataset
-        metrics = metrics_list,
+        metrics_list = metrics_list,
     )
-    campaign.run()
+    #campaign.run()
+    campaign.debug()
     return
 
 def lddataset(args):

@@ -7,9 +7,7 @@ import json
 from tf_injector.injector import Injector
 from tf_injector.faultlist import FaultList
 from tf_injector.writer import CampaignWriter
-
-# mtrics
-from tf_injector.metrics import ImageClassificationMetric
+from tf_injector.new_metrics.metric import Metric
 
 
 # Definisci la directory per i plugin utente
@@ -23,7 +21,7 @@ class Campaign:
         fautl_list_path : str,
         output_path : str,
         preporcessig: callable = lambda x: x,   # (tf.data.Dataset) -> tf.data.Dataset
-        metrics: List[str] = None,
+        metrics_list: List[str] = None,
     ):
     
         self.dataset_name = dataset_name
@@ -38,8 +36,8 @@ class Campaign:
 
         self.output_path = output_path
         self.preprocessig = preporcessig
-        self.metrics = metrics if metrics is not None else []
-        self.injector = None
+        self.metrics_list = metrics_list
+        self.metrics = self.__load_metrics()
 
     def __load_dataset(self) -> tf.data.Dataset :
         dataset_name = self.dataset_name
@@ -114,6 +112,37 @@ class Campaign:
             ), f"Fault layers and target layers didn't match: \n \
             some layers are not present in the network: {included_layers-target_layers}"
 
+    def __load_metrics(self) -> List[type[Metric]]:
+
+        metrics = []
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        metrics_dir = os.path.join(base_path, "new_metrics")
+        files = os.listdir(metrics_dir)
+        metrics_available = [f for f in files if f.endswith('.py')]
+
+        for metric in self.metrics_list:
+            if f"{metric}.py" in metrics_available:
+                path = os.path.join(metrics_dir, f"{metric}.py")
+
+                # import module
+                spec = importlib.util.spec_from_file_location(metric, path)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+
+                # import class
+                metric_class = getattr(module, metric)
+
+                # create instance of the class
+                metric_object = metric_class()
+
+                # add class to the list
+                metrics.append(metric_object)
+            else:
+                print(f"WARNING: Metric ({metric}) not found")
+            
+        return metrics
+    
+
 
     def run(self):
         print("-------------------------------------------------------------")
@@ -134,14 +163,18 @@ class Campaign:
         
         with cw :
             injector.run_campaign(
-                batch = 512,
-                #metrics = self.metrics,
-                metrics = [ImageClassificationMetric],
+                batch = 32,
+                metrics = self.metrics,
                 outputter = cw,
                 save_scores = True,
-                metrics_on_labels = False,
+                metrics_on_labels = True,
             )
-        
-
         print("-------------------------------------------------------------")
         return
+
+
+    def debug(self):
+        for metric in self.metrics:
+            metric.chiSono()
+        return
+    
