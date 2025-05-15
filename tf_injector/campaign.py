@@ -4,9 +4,9 @@ import tensorflow as tf
 from tensorflow import keras
 import importlib.util
 import json
-from gg.injector import Injector
+from tf_injector.injector import Injector
 from tf_injector.faultlist import FaultList
-from gg.writer import CampaignWriter
+from tf_injector.writer import CampaignWriter
 from tf_injector.new_metrics.metric import Metric
 
 

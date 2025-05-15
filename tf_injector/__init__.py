@@ -1,8 +1,8 @@
-from gg.injector import Injector
-from gg.writer import CampaignWriter
-from gg import new_metrics
+from tf_injector.injector import Injector
+from tf_injector.writer import CampaignWriter
+from tf_injector import new_metrics
 
-from gg.utils import REPORT_HEADER, IMAGE_CLASSIFICATION_REPORT_HEADER
+from tf_injector.utils import REPORT_HEADER, IMAGE_CLASSIFICATION_REPORT_HEADER
 
 __all__ = [
     Injector,

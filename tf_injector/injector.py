@@ -7,8 +7,8 @@ import csv
 from contextlib import contextmanager
 from typing import Type, Callable, Iterable
 
-from gg.writer import CampaignWriter
-from gg.utils import INJECTED_LAYERS_TYPES
+from tf_injector.writer import CampaignWriter
+from tf_injector.utils import INJECTED_LAYERS_TYPES
 from tf_injector.new_metrics.metric import Metric
 from tf_injector.faultlist import FaultList
 

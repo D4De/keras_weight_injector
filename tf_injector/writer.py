@@ -4,7 +4,7 @@ import os
 
 from datetime import datetime
 
-from gg.utils import DEFAULT_REPORT_DIR
+from tf_injector.utils import DEFAULT_REPORT_DIR
 
 from typing import Optional
 
