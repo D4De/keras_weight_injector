@@ -4,7 +4,7 @@ import os
 
 from datetime import datetime
 
-from tf_injector.utils import DEFAULT_REPORT_DIR
+from gg.utils import DEFAULT_REPORT_DIR
 
 from typing import Optional
 
@@ -86,7 +86,8 @@ class CampaignWriter:
         
         if not self.one_line_per_input:
             # patch: fault_metrics is a 2D tf.Tensor of float -> convert to a list of integers
-            fault_metrics = list(fault_metrics.numpy().T[0].astype(np.uint32))
+            # TODO : why 32 bits?
+            #fault_metrics = list(fault_metrics.numpy().T[0].astype(np.uint32))
             row = (fault_id, *fault, num_injections, *fault_metrics)
             self.writer.writerow(row) 
         else:

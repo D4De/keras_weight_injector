@@ -3,7 +3,7 @@ import sys
 # To make it work anyways, we manually add the path of the injector to the PYTHONPATH
 # For more info: https://docs.python.org/3/using/cmdline.html#environment-variables
 sys.path.append("../../")
-import tf_injector as kwi 
+import gg as kwi 
 
 from tqdm.auto import tqdm
 
