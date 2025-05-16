@@ -166,3 +166,6 @@ container_reports
 tmp
 classes_models
 benchmark_models/faultlists/test_faultists
+GTSRB_keras/GTSRB_keras/dataset_spec.pb
+GTSRB_keras/GTSRB_keras/snapshot.metadata
+GTSRB_keras/GTSRB_keras/16658436333546139657/00000000.shard/00000000.snapshot
