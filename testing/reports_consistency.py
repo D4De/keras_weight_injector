@@ -4,6 +4,11 @@ import sys
 import csv
 
 
+
+GREEN = '\033[92m'
+RED = '\033[91m'
+RESET = '\033[0m'
+
 def get_dirs(dir):
     yield from (d.__fspath__() for d in os.scandir(dir) if d.is_dir())
 
@@ -47,13 +52,14 @@ def validate_model(model):
         for file, i in selected:
             try:
                 assert i == first_inj
-                print(f"{first_inj[0]}: {first_file} vs {file} OK")
+                print(f"{first_inj[0]}: {GREEN}OK{RESET} {first_file} vs {file}")
             except AssertionError:
                 print(
-                    f"{first_inj[0]}: AssertionError {first_file} vs {file}:\
+                    f"{first_inj[0]}: {RED}AssertionError{RESET} {first_file} vs {file}:\
 {first_inj[4:]} vs {i[4:]}"
                 )
 
 
 if __name__ == "__main__":
-    validate_model(sys.argv[1])
+    validate_reports(sys.argv[1])
+    
