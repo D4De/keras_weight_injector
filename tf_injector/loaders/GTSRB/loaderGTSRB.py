@@ -1,5 +1,5 @@
 '''
-Loading file for CIFAR10
+Loading file for GTSRB
 '''
 import importlib.resources
 import os
@@ -15,10 +15,11 @@ from PIL import Image
 import numpy as np
 from tqdm import tqdm
 
-base_path = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_DATASET_PATH = Path(target_dir = os.path.join(base_path, "loaders", "datasets", "GTSRB"))
+import sys
 
-#(0.3403, 0.3121, 0.3214), (0.2724, 0.2608, 0.2669)
+DEFAULT_DATASET_PATH = Path("tf_injector/loaders/GTSRB/dataset")
+
+
 
 # DAWNLOAD DATASET
 
@@ -106,16 +107,26 @@ def download_gtsrb():
     os.remove(gtsrb_path / "GT-final_test.csv")
     shutil.rmtree(gtsrb_path / "GTSRB")
 
-def load_gtsrb():
-    dt_path = DEFAULT_DATASET_PATH / "GTSRB_keras"
-    if not os.path.exists(dt_path):
-        download_gtsrb()
-    return tf.data.Dataset.load(str(dt_path), compression="GZIP")
+def preprocess(dataset : tf.data.Dataset) -> tf.data.Dataset:
+    """
+    Preprocesses the dataset by normalizing the images and converting the labels to one-hot encoding.
+    """
+    def preprocess_image(image, label):
+        mean = tf.constant([0.3403, 0.3121, 0.3214], dtype=tf.float32)
+        std = tf.constant([0.2724, 0.2608, 0.26690], dtype=tf.float32)
 
-def load():
-    dataset = load_gtsrb()
-    #TODO: preprocess
+        image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+        image = (image - mean) / std
+        
+        return image, label
+
+    dataset = dataset.map(preprocess_image)
     return dataset
 
+def load_gtsrb():
+    dt_path = DEFAULT_DATASET_PATH / "GTSRB_keras" / "GTSRB_keras"
+    if not os.path.exists(dt_path):
+        download_gtsrb()
+    dt = tf.data.Dataset.load(str(dt_path), compression="GZIP")
+    return preprocess(dt)
 
-dt = load()
