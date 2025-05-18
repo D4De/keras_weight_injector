@@ -13,11 +13,14 @@ def compute_pixel_accuracy(x1, x2):
     # totalPixels = x1.shape[0] * tf.math.reduce_prod( x1.shape[1:] )
     correctPixels = tf.math.reduce_sum( 
         tf.cast(diff, np.uint64),
-        axis = [1,2]
+        axis = [0,1,2]
     ) # (data,)
-    correctPixels = tf.reduce_mean(correctPixels) # single value
-
-    return correctPixels
+    #correctPixels = tf.reduce_mean(correctPixels) # single value
+    totalPixels = tf.math.reduce_sum(
+        tf.cast(tf.ones_like(x1), np.uint64),
+        axis = [0,1,2]
+    ) 
+    return correctPixels / totalPixels
 
 class PixelAccuracy(Metric):
     def __init__(self, clean_scores, labels, num_classes):

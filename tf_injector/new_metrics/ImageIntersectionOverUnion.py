@@ -3,32 +3,21 @@ import tensorflow as tf
 
 def compute_IOU(out, label, numclass):
     
-    # out : (batch, 520, 520, 21)
-    #out = out[0]
-    #out = tf.argmax(out, axis=-1)
-    # out : (batch, 520, 520)
-    # label is already in the right format (batch, 520, 520)
-
     ious = []
     for cls in range(numclass):
         clsx1 = out == cls
         clsx2 = label == cls
         inter = tf.reduce_sum(
             tf.cast(tf.logical_and(clsx1, clsx2), tf.uint64),
-            axis=[1,2]
+            axis=[0,1,2]
         )
         union = tf.reduce_sum( 
             tf.cast(tf.logical_or(clsx1, clsx2),tf.uint64),
-            axis=[1,2]
+            axis=[0,1,2]
         )
         iou = inter / union
         ious.append(iou)
     ious = tf.transpose(tf.stack(ious))
-
-    #print("out shape: ", out.shape)
-    #print("label shape: ", label.shape)
-    #print("IOU shape: ", ious.shape)
-    #print("----------------------")
     return ious
 
 class ImageIntersectionOverUnion(Metric):
@@ -54,8 +43,8 @@ class ImageIntersectionOverUnion(Metric):
 
     def clean_output(self):
         metric = compute_IOU(self.clean_labels, self.labels, self.num_classes) # (dataset, 21)
-        mean = tf.experimental.numpy.nanmean(metric, axis=0) # (21,)
-        tupl = tuple(mean.numpy().tolist())
+        #mean = tf.experimental.numpy.nanmean(metric, axis=0) # (21,)
+        tupl = tuple(metric.numpy().tolist())
 
         return tupl + (None,) * self.num_classes
 
@@ -70,7 +59,7 @@ class ImageIntersectionOverUnion(Metric):
             label = self.labels,
             numclass= self.num_classes
         )
-        metric_on_labels = tf.experimental.numpy.nanmean(metric_on_labels, axis=0) # (data, 21) -> (21,)
+        #metric_on_labels = tf.experimental.numpy.nanmean(metric_on_labels, axis=0) # (data, 21) -> (21,)
         metric_on_labels = metric_on_labels.numpy().tolist()
         output.extend(metric_on_labels)
 
@@ -80,7 +69,7 @@ class ImageIntersectionOverUnion(Metric):
             label = self.clean_labels,
             numclass= self.num_classes
         )
-        metric_on_clean_score = tf.experimental.numpy.nanmean(metric_on_clean_score, axis=0) # (data, 21) -> (21,)
+        #metric_on_clean_score = tf.experimental.numpy.nanmean(metric_on_clean_score, axis=0) # (data, 21) -> (21,)
         metric_on_clean_score = metric_on_clean_score.numpy().tolist()
         output.extend(metric_on_clean_score)
 

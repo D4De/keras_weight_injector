@@ -166,10 +166,5 @@ def load() -> tf.data.Dataset :
         ),
         num_parallel_calls=tf.data.AUTOTUNE
     )
-
-    # TODO : remove, just for debugging
-    # 4 batches of 32, takes longer with the whole dataset
-    dataset = dataset.take(6)
-
-
+    
     return dataset
