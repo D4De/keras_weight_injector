@@ -52,7 +52,7 @@ def validate_model(model):
         for file, i in selected:
             try:
                 assert i == first_inj
-                print(f"{first_inj[0]}: {GREEN}OK{RESET} {first_file} vs {file}")
+                #print(f"{first_inj[0]}: {GREEN}OK{RESET} {first_file} vs {file}")
             except AssertionError:
                 print(
                     f"{first_inj[0]}: {RED}AssertionError{RESET} {first_file} vs {file}:\

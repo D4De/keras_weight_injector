@@ -81,11 +81,11 @@ class ImageClassificationMetric(Metric):
     
     def get_header(self) -> tuple[str, ...]:
         return (
-            "Top-1 Accuracy",
-            "Top-5 Accuracy",
-            "Top-1 Robustness",
-            "Top-5 Robustness",
-            "Masked Counter",
-            "Non Critical Counter",
-            "Critical Counter"
+            "top-1 Accuracy",
+            "top-5 Accuracy",
+            "top-1 Robustness",
+            "top-5 Robustness",
+            "masked Counter",
+            "non Critical Counter",
+            "critical Counter"
         )
