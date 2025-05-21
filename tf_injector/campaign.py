@@ -183,9 +183,7 @@ class Campaign:
             "target_layer",
             "layer_weigths",
             "bit_pos",
-            "lables len"
-            #"input_id",
-            #"n_injections",
+            "n_injections",
             )
         
         metrics_header = tuple()
