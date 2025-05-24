@@ -22,6 +22,7 @@ def validate_reports(base_dir):
     datasets = get_dirs(base_dir)
     models = {dataset: get_dirs(dataset) for dataset in datasets}
     for dt in models:
+        print(f"Validating dataset: {dt}")
         for model in models[dt]:
             validate_model(model)
 
