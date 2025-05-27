@@ -40,7 +40,6 @@ top_5_accuracy = make_k_accuracy(5)
 
 class ImageClassificationMetric(Metric):
     def __init__(self, clean_scores: tf.Tensor, labels: tf.Tensor, num_classes):
-        # TODO reimplement metrics using tf.Tensor
         clean_scores = clean_scores.numpy() if clean_scores is not None else None
         labels = labels.numpy() if labels is not None else None
 

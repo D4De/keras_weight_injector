@@ -36,6 +36,7 @@ class Injector:
                  transform_label: Callable = lambda x: x,
                  faults : FaultList = None,
                  num_classes : int = 0,
+                 seed: int = None
                  ):
         """
         Args:
@@ -62,6 +63,11 @@ class Injector:
         # tensorflow to numpy
         self.transform_output = transform_output
         self.transform_label = transform_label
+
+        if seed is not None:
+            tf.config.experimental.enable_op_determinism()
+            tf.keras.utils.set_random_seed(seed)
+            tf.keras.backend.manual_variable_initialization(True)
 
     def load_fault_list(self, fault_path: str, resume_from: int = 0):
         """

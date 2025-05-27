@@ -123,7 +123,7 @@ def preprocess(dataset : tf.data.Dataset) -> tf.data.Dataset:
     dataset = dataset.map(preprocess_image)
     return dataset
 
-def load_gtsrb():
+def load_gtsrb(DATASET_PATH):
     dt_path = DEFAULT_DATASET_PATH / "GTSRB_keras" / "GTSRB_keras"
     if not os.path.exists(dt_path):
         download_gtsrb()

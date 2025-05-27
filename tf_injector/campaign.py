@@ -14,6 +14,7 @@ class Campaign:
     def __init__(
         self,
         dataset_name : str, # () -> tf.data.Dataset
+        dataset_path : str,
         network_path : str,
         fautl_list_path : str,
         output_path : str,
@@ -22,11 +23,14 @@ class Campaign:
         batch_size: int = 32,
         save_scores: bool = False,
         resume_from: int = 0,
+        validate_fault_list: bool = True,
+        seed : int = None
     ):
     
         self.dataset_name = dataset_name
         self.network_path = network_path
-        self.dataset = self.__load_dataset() # tf.data.Dataset
+        self.dataset_path = dataset_path
+        self.dataset = self.__load_dataset(dataset_path) # tf.data.Dataset
         self.network = self.__load_network()
 
         # load fault list
@@ -43,6 +47,8 @@ class Campaign:
         self.num_classes = self.__get_number_of_classes()
         self.batch_size = batch_size
         self.save_scores = save_scores
+        self.validate_fault_list = validate_fault_list
+        self.seed = seed
 
         # tranfrom output function
         try:
@@ -53,7 +59,7 @@ class Campaign:
             self.transform_output = lambda x: x
 
 
-    def __load_dataset(self) -> tf.data.Dataset :
+    def __load_dataset(self, path) -> tf.data.Dataset :
         dataset_name = self.dataset_name
 
 
@@ -87,7 +93,7 @@ class Campaign:
 
 
         # check if the function returns a tf.data.Dataset
-        dataset = loader_function()
+        dataset = loader_function(path)
         if not isinstance(dataset, tf.data.Dataset):
             raise TypeError(f"La funzione {func_name} non ha restituito un tf.data.Dataset")
         return dataset
@@ -174,7 +180,12 @@ class Campaign:
             dataset = self.dataset,
             faults = self.fault_list,
             transform_output = self.transform_output,
+            seed= self.seed
         )
+        
+        if (self.validate_fault_list):
+            print(f"Faul list validation...")
+            injector.validate()
 
         network_name = os.path.basename(self.network_path)
 

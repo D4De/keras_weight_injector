@@ -73,6 +73,6 @@ def tf_preprocessed_dataset():
 
 
 # to be loaded 
-def load():
+def load(DATASET_PATH : str):
     #return np_preprocessed_dataset()
     return tf_preprocessed_dataset()

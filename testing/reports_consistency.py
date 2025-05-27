@@ -21,6 +21,7 @@ def get_length(file):
 def validate_reports(base_dir):
     datasets = get_dirs(base_dir)
     models = {dataset: get_dirs(dataset) for dataset in datasets}
+    print(models)
     for dt in models:
         print(f"Validating dataset: {dt}")
         for model in models[dt]:

@@ -108,7 +108,7 @@ def download_gtsrb():
     shutil.rmtree(gtsrb_path / "GTSRB")
 
 
-def load_gtsrb():
+def load_gtsrb(DATASET_PATH: str) -> tf.data.Dataset:
     dt_path = DEFAULT_DATASET_PATH / "GTSRB_keras" / "GTSRB_keras"
     if not os.path.exists(dt_path):
         download_gtsrb()

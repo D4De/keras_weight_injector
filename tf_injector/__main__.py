@@ -8,7 +8,23 @@ import json
 
 from tf_injector.campaign import Campaign
 
+def get_avaliable_datasets() -> str:
+    """
+    Returns a string with the names of the avaliable datasets
+    """
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    loaders_path = os.path.join(base_path, "loaders")
+    datasets = [d for d in os.listdir(loaders_path) if os.path.isdir(os.path.join(loaders_path, d))]
+    return ", ".join(datasets)
 
+def get_avaliable_metrics() -> str:
+    '''
+    Returns a string with the names of the avaliable metrics
+    '''
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    metrics_path = os.path.join(base_path, "new_metrics")
+    metrics = [f[:-3] for f in os.listdir(metrics_path) if f.endswith('.py') and f != '__init__.py' and f != 'metric.py']
+    return ", ".join(metrics)
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -23,19 +39,19 @@ def parse_args():
         '--path_to_function', 
         '-fp', 
         required=True, 
-        help='path of the loading python file'
+        help='Path of the python file that contains the function to load the dataset'
         )
     load_parser.add_argument(
         '--function_name', 
         '-fn', 
         required=True, 
-        help='name of the top function of the loading file'
+        help='Name of the top function of the loading file'
         )
     load_parser.add_argument(
         '--dataset_name', 
         '-n', 
         required=True, 
-        help='dataset name, if present you substitute the python file with this one'
+        help='Dataset name to load, it will be used to create a directory in the loaders folder'
         )
     
     # Comando LOAD METRIC : ldmetric
@@ -44,7 +60,7 @@ def parse_args():
         '--path', 
         '-p', 
         required=True, 
-        help='path of the loading python file with the class'
+        help='Path of the loading python file with the class. Name of the class must be the same as the file name'
         )
 
     # Comando RUN (to confing a custom campaign)
@@ -52,35 +68,43 @@ def parse_args():
     run_parser.add_argument(
         '--dataset', 
         '-d', 
-        required=True, 
-        help='name of the dataset'
+        required=True,
+        help=f"Name of the dataset. Avaliables : {get_avaliable_datasets()}\n"
         ) 
+    run_parser.add_argument(
+        '--dataset_path', 
+        '-dp', 
+        help='Path to the dataset directory',
+        default="lambda x: x"
+    )
     run_parser.add_argument(
         '--postprocess', 
         '-p', 
-        help='Lambda expression for the function to apply to the output of the inference of the model'
-        )
+        help='Lambda expression for the function to apply to the output of the inference of the model\nEXAMPLE: "lambda x: x" (default)',
+        default="lambda x: x"
+    )
     run_parser.add_argument(
         '--metrics', 
         '-met', 
         required=True, 
-        help='Metriche da utilizzare'
+        help=f"Set of metrics to use for the campaign, separated by commas.\nEXAMPLE: metric1,mectric2,metric3.\nAvaliable metrics: {get_avaliable_metrics()}\n"
         )
     run_parser.add_argument(
         '--fault_list', 
         '-fl', 
-        help='path to the fault list'
+        help='Path to the fault list'
         )
     run_parser.add_argument(
         '--model', 
         '-m', 
         required=True, 
-        help='path to the model'
+        help='Path to the model model.keras, model.h or the model directory'
         )
     run_parser.add_argument(
         '--output_path', 
         '-o', 
-        help='the campaign report will be saved here'
+        default='out',
+        help='Path to the output directory where the results will be saved',
         )
     run_parser.add_argument(
         '--batch', 
@@ -101,6 +125,18 @@ def parse_args():
         default=0, 
         help='Resume injection from this index'
     )
+    run_parser.add_argument(
+        '--validate', 
+        '-v', 
+        help='Validate the fault list, checking if the layers are present in the model'
+    )
+    run_parser.add_argument(
+        '--seed', 
+        '-se', 
+        type=int, 
+        default=None, 
+        help='Set a seed for determinism'
+    )
     
     return parser.parse_args()
 
@@ -110,9 +146,11 @@ def run(args):
 
     save_scores = True if args.save_scores else False
     resume_from = args.resume_from if args.resume_from else 0
+    validate_fault_list = True if args.validate else False
 
     campaign = Campaign(
         dataset_name = args.dataset,
+        dataset_path = args.dataset_path,
         network_path = args.model,
         output_path = args.output_path,
         fautl_list_path = args.fault_list,
@@ -120,7 +158,9 @@ def run(args):
         metrics_list = metrics_list,
         batch_size = args.batch,
         save_scores = save_scores,
-        resume_from = args.resume_from,
+        resume_from = resume_from,
+        validate_fault_list = validate_fault_list,
+        seed = args.seed
     )
     campaign.run()
     return

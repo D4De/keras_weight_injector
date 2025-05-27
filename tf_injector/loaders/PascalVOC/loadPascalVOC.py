@@ -7,9 +7,6 @@ uses tf_from_tensor_slices instead of PIL to load images
 '''
 
 
-# fixe params
-PATH = "/Users/domenicopalumbo/Documents/VOCdevkit/VOC2012/"
-batch_size = 32
 
 HEIGHT = 520
 WIDTH = 520
@@ -137,14 +134,14 @@ def load_preprocess_mask(mask_path: tf.Tensor) -> tf.Tensor:
 
     return class_indices
 
-def load() -> tf.data.Dataset :
+def load(DATASET_PATH : str) -> tf.data.Dataset :
     
     # base dir for imgs and masks
-    imgs_dir = os.path.join(PATH, 'JPEGImages')
-    masks_dir = os.path.join(PATH, 'SegmentationClass')
+    imgs_dir = os.path.join(DATASET_PATH, 'JPEGImages')
+    masks_dir = os.path.join(DATASET_PATH, 'SegmentationClass')
 
     # list of IDs fot the images of the val set
-    split_file = os.path.join(PATH, 'ImageSets', 'Segmentation', "val.txt")
+    split_file = os.path.join(DATASET_PATH, 'ImageSets', 'Segmentation', "val.txt")
     with open(split_file, 'r') as f:
         image_ids = [line.strip() for line in f.readlines()]
 
