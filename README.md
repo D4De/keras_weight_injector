@@ -196,3 +196,179 @@ python -m tf_injector lddataset \
 ```
 python -m tf_injector ldmetric --path /PATH_TO_PYTHON_FILE
 ```
+
+## Reproduce experiments
+Go to the repository on https://gitlab.pmcs2i.ec-lyon.fr/spappala/dnn-benchmarks. Download the folder `tensorflow` and copy into tf_injector. It contains models and fault lists for each dataset. 
+
+### CIFAR10
+
+- DenseNet121
+```
+python -m tf_injector run \
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR10/fp32/densenet/DenseNet121_TF_FL.csv \
+--model /gpu/image_classification/CIFAR10/fp32/densenet/DenseNet121.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
+```
+
+- DenseNet161
+```
+python -m tf_injector run \
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR10/fp32/densenet/DenseNet161_TF_FL.csv \
+--model /gpu/image_classification/CIFAR10/fp32/densenet/DenseNet161.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
+```
+
+- GoogleNet
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR10/fp32/googlenet/googlenet_cifar10_TF_FL.csv\
+--model /gpu/image_classification/CIFAR10/fp32/googlenet/GoogLeNet.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
+```
+
+- MobileNetV2
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR10/fp32/mobilenet/mobilenetv2_cifar10_TF_FL.csv\
+--model /gpu/image_classification/CIFAR10/fp32/mobilenet/MobileNetV2.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+- ResNet20
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR10/fp32/resnet/ResNet20_TF_FL.csv\
+--model /gpu/image_classification/CIFAR10/fp32/resnet/ResNet20.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+- ResNet32
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR10/fp32/resnet/ResNet32_TF_FL.csv\
+--model /gpu/image_classification/CIFAR10/fp32/resnet/ResNet32.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+- ResNet44
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR10/fp32/resnet/ResNet44_TF_FL.csv\
+--model /gpu/image_classification/CIFAR10/fp32/resnet/ResNet44.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+- Vgg11
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR10/fp32/vgg/Vgg11_bn_TF_FL.csv\
+--model /gpu/image_classification/CIFAR10/fp32/vgg/Vgg11_bn.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+- Vgg13
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR10/fp32/vgg/Vgg13_bn_TF_FL.csv\
+--model /gpu/image_classification/CIFAR10/fp32/vgg/Vgg13_bn.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+### CIFAR100
+
+- DenseNet121
+```
+python -m tf_injector run \
+--dataset CIFAR100 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR100/fp32/densenet/DenseNet121_TF_FL.csv \
+--model /gpu/image_classification/CIFAR100/fp32/densenet/DenseNet121.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
+```
+
+- GoogleNet
+```
+--dataset CIFAR100 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR100/fp32/googlenet/googlenet_cifar100_TF_FL.csv\
+--model /gpu/image_classification/CIFAR100/fp32/googlenet/GoogLeNet.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
+```
+
+- ResNet18
+```
+--dataset CIFAR100 \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/CIFAR100/fp32/resnet/ResNet18_TF_FL.csv\
+--model /gpu/image_classification/CIFAR100/fp32/resnet/ResNet18.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+### GTSRB
+
+- DenseNet121
+```
+python -m tf_injector run \
+--dataset GTSRB \
+--metrics ImageClassificationMetric \
+--fault_list /gpu/image_classification/GTSRB/fp32/densenet/DenseNet121_TF_FL.csv \
+--model /gpu/image_classification/GTSRB/fp32/densenet/DenseNet121.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
+```
+
+### PascalVOC
+
+1. Download the VocDataset
+
+2. Run this prompt
+```
+ python -m tf_injector run \
+--dataset PascalVOC \
+--dataset_path PATH_TO_VOCdevkit/VOC2012 \
+--metrics PixelAccuracy,ImageIntersectionOverUnion \
+--fault_list /gpu/image_segmentation/PascalVOC/fp32/DeepLabV3/DeepLabV3_ResNet50_TF_FL.csv
+--model /gpu/image_segmentation/PascalVOC/fp32/DeepLabV3/DeepLabV3_ResNet50.keras
+--postprocess "lambda x : x[0]" \
+--output_path out \
+--batch 2048
+```
+
+> [!NOTE]
+> reports can be found in `tf_injector/out`
