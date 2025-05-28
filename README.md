@@ -207,8 +207,8 @@ Go to the repository on https://gitlab.pmcs2i.ec-lyon.fr/spappala/dnn-benchmarks
 python -m tf_injector run \
 --dataset CIFAR10 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR10/fp32/densenet/DenseNet121_TF_FL.csv \
---model /gpu/image_classification/CIFAR10/fp32/densenet/DenseNet121.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet121_TF_FL.csv \
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet121.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch 2048
@@ -219,8 +219,8 @@ python -m tf_injector run \
 python -m tf_injector run \
 --dataset CIFAR10 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR10/fp32/densenet/DenseNet161_TF_FL.csv \
---model /gpu/image_classification/CIFAR10/fp32/densenet/DenseNet161.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet161_TF_FL.csv \
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet161.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch 2048
@@ -230,8 +230,8 @@ python -m tf_injector run \
 ```
 --dataset CIFAR10 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR10/fp32/googlenet/googlenet_cifar10_TF_FL.csv\
---model /gpu/image_classification/CIFAR10/fp32/googlenet/GoogLeNet.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/googlenet/googlenet_cifar10_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/googlenet/GoogLeNet.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch 2048
@@ -241,8 +241,8 @@ python -m tf_injector run \
 ```
 --dataset CIFAR10 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR10/fp32/mobilenet/mobilenetv2_cifar10_TF_FL.csv\
---model /gpu/image_classification/CIFAR10/fp32/mobilenet/MobileNetV2.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/mobilenet/mobilenetv2_cifar10_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/mobilenet/MobileNetV2.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch  2048
@@ -252,8 +252,8 @@ python -m tf_injector run \
 ```
 --dataset CIFAR10 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR10/fp32/resnet/ResNet20_TF_FL.csv\
---model /gpu/image_classification/CIFAR10/fp32/resnet/ResNet20.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet20_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet20.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch  2048
@@ -263,8 +263,8 @@ python -m tf_injector run \
 ```
 --dataset CIFAR10 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR10/fp32/resnet/ResNet32_TF_FL.csv\
---model /gpu/image_classification/CIFAR10/fp32/resnet/ResNet32.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet32_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet32.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch  2048
@@ -274,8 +274,8 @@ python -m tf_injector run \
 ```
 --dataset CIFAR10 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR10/fp32/resnet/ResNet44_TF_FL.csv\
---model /gpu/image_classification/CIFAR10/fp32/resnet/ResNet44.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet44_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet44.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch  2048
@@ -285,8 +285,8 @@ python -m tf_injector run \
 ```
 --dataset CIFAR10 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR10/fp32/vgg/Vgg11_bn_TF_FL.csv\
---model /gpu/image_classification/CIFAR10/fp32/vgg/Vgg11_bn.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg11_bn_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg11_bn.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch  2048
@@ -296,8 +296,8 @@ python -m tf_injector run \
 ```
 --dataset CIFAR10 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR10/fp32/vgg/Vgg13_bn_TF_FL.csv\
---model /gpu/image_classification/CIFAR10/fp32/vgg/Vgg13_bn.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg13_bn_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg13_bn.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch  2048
@@ -310,8 +310,8 @@ python -m tf_injector run \
 python -m tf_injector run \
 --dataset CIFAR100 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR100/fp32/densenet/DenseNet121_TF_FL.csv \
---model /gpu/image_classification/CIFAR100/fp32/densenet/DenseNet121.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR100/fp32/densenet/DenseNet121_TF_FL.csv \
+--model tensorflow/gpu/image_classification/CIFAR100/fp32/densenet/DenseNet121.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch 2048
@@ -321,8 +321,8 @@ python -m tf_injector run \
 ```
 --dataset CIFAR100 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR100/fp32/googlenet/googlenet_cifar100_TF_FL.csv\
---model /gpu/image_classification/CIFAR100/fp32/googlenet/GoogLeNet.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR100/fp32/googlenet/googlenet_cifar100_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR100/fp32/googlenet/GoogLeNet.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch 2048
@@ -332,8 +332,8 @@ python -m tf_injector run \
 ```
 --dataset CIFAR100 \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/CIFAR100/fp32/resnet/ResNet18_TF_FL.csv\
---model /gpu/image_classification/CIFAR100/fp32/resnet/ResNet18.keras \
+--fault_list tensorflow/gpu/image_classification/CIFAR100/fp32/resnet/ResNet18_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR100/fp32/resnet/ResNet18.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch  2048
@@ -346,8 +346,8 @@ python -m tf_injector run \
 python -m tf_injector run \
 --dataset GTSRB \
 --metrics ImageClassificationMetric \
---fault_list /gpu/image_classification/GTSRB/fp32/densenet/DenseNet121_TF_FL.csv \
---model /gpu/image_classification/GTSRB/fp32/densenet/DenseNet121.keras \
+--fault_list tensorflow/gpu/image_classification/GTSRB/fp32/densenet/DenseNet121_TF_FL.csv \
+--model tensorflow/gpu/image_classification/GTSRB/fp32/densenet/DenseNet121.keras \
 --postprocess "lambda x : x " \
 --output_path out \
 --batch 2048
@@ -363,8 +363,8 @@ python -m tf_injector run \
 --dataset PascalVOC \
 --dataset_path PATH_TO_VOCdevkit/VOC2012 \
 --metrics PixelAccuracy,ImageIntersectionOverUnion \
---fault_list /gpu/image_segmentation/PascalVOC/fp32/DeepLabV3/DeepLabV3_ResNet50_TF_FL.csv
---model /gpu/image_segmentation/PascalVOC/fp32/DeepLabV3/DeepLabV3_ResNet50.keras
+--fault_list tensorflow/gpu/image_segmentation/PascalVOC/fp32/DeepLabV3/DeepLabV3_ResNet50_TF_FL.csv
+--model tensorflow/gpu/image_segmentation/PascalVOC/fp32/DeepLabV3/DeepLabV3_ResNet50.keras
 --postprocess "lambda x : x[0]" \
 --output_path out \
 --batch 2048
