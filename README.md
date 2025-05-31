@@ -40,11 +40,11 @@ We have tested the fault injector on the models contained in [dnn-benchmarks](ht
     - Resnet
     - Vgg
 - PascalVOC
-    - DeepLabV3  
+    - DeepLabV3
 
 ## Dataset transformation
 > [!NOTE]
-> All the metrics reported in this `README` refer to the `NumPy` preprocessing displayed below. An equivalent TensorFlow preprocessing is available through the `--use-tf` flag, but it may lead to slightly different results. 
+> For `CIFAR10`, `CIFAR100` and `GTSRB` both tenforflow and numpy preprocessing are avaleable. Use `--dataset DATASET` to use the preprocess with tenforflow and `--dataset DATASETnp` for numpy
 
 ### CIFAR10
 ```
@@ -67,11 +67,11 @@ image = (image - (0.3403, 0.3121, 0.3214)) / (0.2724, 0.2608, 0.2669)
 ## Usage
 Run as a Python module:
 ```
-python -m tf_injector [ARGS, ...]
+python -m tf_injector run [ARGS, ...]
 ```
 To display the complete usage guide, type
 ```
-python -m tf_injector --help
+python -m tf_injector run --help
 ```
 ## Input
 To run an injection campaign, you will need:
@@ -85,39 +85,64 @@ To run an injection campaign, you will need:
 
 
 ## Outputs
-By default, a summarized report of the injection campaign is stored in `reports/<dataset>/<network>/<dataset>_<network>_<datetime>.csv`
+By default, a summarized report of the injection campaign is stored in `out/<dataset>/<network>/<dataset>_<network>_<datetime>.csv`
 By enabling the `--save-outputs` flag, inference outputs are saved as numpy arrays in the same folder, as `<datetime>/clean.npy` for the clean run, and `<datetime>/inj_<inj_id>.npy` for the faulty runs.
 
 ### Output metrics
 
-- Part 1: Injection info
+#### Part 1: Injection info
 
 | Injection | Layer  |   TensorIndex   | Bit |
 |:---------:|:------:|:---------------:|:---:|
 |         0 | conv2d |  "(2, 1, 0, 7)" |  15 |
 |         1 | conv2d | "(2, 0, 0, 14)" |   5 |
 
-- Part 2: robustness
+#### Part 2: metrics specifics columns
+
+- `ImageClassificationMetric` for image classification
+
     - `top_1_correct`: the label with the maximum score equals the test label (correct inference)
     - `top_5_correct`: the test label is inside the set of the labels which gained the five highest scores
     - `top_1_robust`: Same as top_1_correct, but compared with the predicted labels of the golden inference 
     - `top_5_robust`: Same as top_5_correct, but compared with the predicted labels of the golden inference 
 
-
-| top_1_correct | top_5_correct | top_1_robust | top_5_robust |
-| --------------- | --------------- | --------------- | ------------ |
-| 9174 | 9977 | 10000 | 10000 |
-| 9174 | 9977 | 10000 | 10000 |
-
-- Part 3: other stats
     - `masked`: Number of dataset inferences that identified the fault as masked.
     - `non_critical`: Number of dataset inferences that identified the fault as non-critical.
     - `critical`: Number of dataset inferences that identified the fault as critical (SDC-1).
 
-| n_injections | masked | non_critical | critical |
-|:------------:|:------:|:------------:|:--------:|
-|        10000 |  10000 |            0 |        0 |
-|        10000 |  10000 |            3 |        0 |
+| top_1_correct | top_5_correct | top_1_robust | top_5_robust | masked | non_critical | critical |
+|:-------------:|:-------------:|:------------:|:------------:|:------:|:------------:|:--------:|
+| 9174          | 9977          | 10000        | 10000        | 10000  | 0            | 0        |
+| 9174          | 9977          | 10000        | 10000        | 10000  | 3            | 0        |
+
+- `PixelAccuracy` for image segmentation
+
+    - `pixel_accuracy_on_label`: percentage of pixels correctly classified compared to the reference label
+    - `pixel_accuracy_on_golden`: percentage of pixels classified consistently with the golden inference (robustness)
+
+| pixel_accuracy_on_label | pixel_accuracy_on_golden |
+|:-----------------------:|:------------------------:|
+| 0.8923                  | 0.9987                   |
+| 0.8923                  | 0.9462                   |
+
+- `ImageIntersectionOverUnion` for image segmentation
+
+    - `IOU_on_label_i`: Intersection over Union for class `{i}` between prediction and reference label
+    - `IOU_on_golden_i`: Intersection over Union for class `{i}` between prediction and golden inference
+    
+    Where `i` identifies the class 
+
+Mathematically, for each class, IoU is defined as:
+    
+    IoU = (area of overlap) / (area of union) = (TP) / (TP + FP + FN)
+    
+    Where TP = true positives, FP = false positives, FN = false negatives
+
+
+| IOU_on_label_0 | IOU_on_label_1 | ... | IOU_on_label_20 | IOU_on_golden_0 | IOU_on_golden_1 | ... | IOU_on_golden_20 |
+|:--------------:|:--------------:|:---:|:---------------:|:---------------:|:---------------:|:---:|:----------------:|
+| 0.8651         | 0.7123         | ... | 0.6987          | 0.9991          | 0.9845          | ... | 0.9912           |
+| 0.8651         | 0.7123         | ... | 0.6987          | 0.8762          | 0.9124          | ... | 0.8992           |
 
 ## Tools
 Additional tools are placed in the `tools` folder.
@@ -134,53 +159,216 @@ The folder `testing` contains testing utilities to validate the result of the in
 
 ## Integrating Additional DNN Models
 
-### Dataset
-- in `loaders.py`, add a loading function that returns a TF tensor containing the data and the labels of the dataset. This function should also handle the initialisation of the dataset if not present on the device.
-- Register the dataset loader editing the `loaders` variable:
+### Models and Fault Lists
+Use the absolute path of the model and the fault list in the run prompt
 ```
-loaders = {
-    ...
-    "dataset-name":loader_function,
-}
-```
-- edit `preprocessing.py` to add a preprocessing function
-- Register the preprocessors using numpy in the `np_preprocessors` variable
-```
-np_preprocessors = {
-    ...
-    "dataset-name":np_preprocessing_function,
-}
-```
-- Register the preprocessors relying on TensorFlow in the `preprocessors` variable
-```
-preprocessors = {
-    ...
-    "dataset-name":tf_preprocessing_function,
-}
-```
-- Register the dataset by editing the variable `SUPPORTED_DATASET` in `utils.py`
-```
-SUPPORTED_DATASET = [..., "dataset-name"]
+python -m tf_injector run \
+--model /PATH_TO_MODEL
+--fault_list  /PATH_TO_LIST
+[... other ARGS]
 ```
 
-### Models
-- Place the `.keras` file in the `models/dataset-name/` folder
-- Register the model by editing the variable `SUPPORTED_MODELS` in `utils.py`
+### Dataset
+- Create a python script with a function that returns a `tensorflow.data.Dataset`
 ```
-SUPPORTED_MODELS = [..., "model-name"]
+# new_DATSASET_LOADER.py
+import tensorflow as tf
+
+def load() -> tf.data.Dataset :
+    [...]
 ```
+
+- use the `lddataset` command in the injector
+```
+python -m tf_injector lddataset \
+--dataset_name new_DATASET \
+--path_to_function /PATH_TO_FILE_DIR/new_DATASET_LOADER.py
+--function_name load
+```
+
+> [!NOTE]
+> if a dataset with such name is already present, it gets swapped with the latter one Check the current avaliable dataset with the `python -m tf_injector run --help` command.
 
 ### Metrics
-- Add a new metrics system by subclassing `Metric` in `metrics.py`. Read its docstrings for more information
-- Add a new metric header in `settings.py`:
+- Create a python file with a class that extends Metric. Follow the tmplate in `./tmplates`. The name of the file must be equal to the name of the class.
+
+- Run the ldmetric command in the injector
 ```
-MY_HEADER = REPORT_HEADER + (
- 'metric_name1', ... , 'metric_name_n'
-)
+python -m tf_injector ldmetric --path /PATH_TO_PYTHON_FILE
 ```
-- Edit lines 5 and 8 in `__main__.py` to import the new header and the new metric:
+
+## Reproduce experiments
+Go to the repository on https://gitlab.pmcs2i.ec-lyon.fr/spappala/dnn-benchmarks. Download the folder `tensorflow` and copy into tf_injector. It contains models and fault lists for each dataset. 
+
+### CIFAR10
+
+- DenseNet121
 ```
-5. from tf_injector.utils import ..., MY_HEADER
-8. from tf_injector.metrics import ..., MyMetric
+python -m tf_injector run \
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet121_TF_FL.csv \
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet121.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
 ```
-- Edit the function `main` in `__main__.py` to implement a selection logic for the headers and the metrics, assigning them to the variables `report_header` `metric` respectively.
+
+- DenseNet161
+```
+python -m tf_injector run \
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet161_TF_FL.csv \
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet161.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
+```
+
+- GoogleNet
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/googlenet/googlenet_cifar10_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/googlenet/GoogLeNet.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
+```
+
+- MobileNetV2
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/mobilenet/mobilenetv2_cifar10_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/mobilenet/MobileNetV2.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+- ResNet20
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet20_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet20.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+- ResNet32
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet32_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet32.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+- ResNet44
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet44_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet44.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+- Vgg11
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg11_bn_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg11_bn.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+- Vgg13
+```
+--dataset CIFAR10 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg13_bn_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg13_bn.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+### CIFAR100
+
+- DenseNet121
+```
+python -m tf_injector run \
+--dataset CIFAR100 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR100/fp32/densenet/DenseNet121_TF_FL.csv \
+--model tensorflow/gpu/image_classification/CIFAR100/fp32/densenet/DenseNet121.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
+```
+
+- GoogleNet
+```
+--dataset CIFAR100 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR100/fp32/googlenet/googlenet_cifar100_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR100/fp32/googlenet/GoogLeNet.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
+```
+
+- ResNet18
+```
+--dataset CIFAR100 \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/CIFAR100/fp32/resnet/ResNet18_TF_FL.csv\
+--model tensorflow/gpu/image_classification/CIFAR100/fp32/resnet/ResNet18.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch  2048
+```
+
+### GTSRB
+
+- DenseNet121
+```
+python -m tf_injector run \
+--dataset GTSRB \
+--metrics ImageClassificationMetric \
+--fault_list tensorflow/gpu/image_classification/GTSRB/fp32/densenet/DenseNet121_TF_FL.csv \
+--model tensorflow/gpu/image_classification/GTSRB/fp32/densenet/DenseNet121.keras \
+--postprocess "lambda x : x " \
+--output_path out \
+--batch 2048
+```
+
+### PascalVOC
+
+1. Download the VocDataset
+
+2. Run this prompt
+```
+ python -m tf_injector run \
+--dataset PascalVOC \
+--dataset_path PATH_TO_VOCdevkit/VOC2012 \
+--metrics PixelAccuracy,ImageIntersectionOverUnion \
+--fault_list tensorflow/gpu/image_segmentation/PascalVOC/fp32/DeepLabV3/DeepLabV3_ResNet50_TF_FL.csv
+--model tensorflow/gpu/image_segmentation/PascalVOC/fp32/DeepLabV3/DeepLabV3_ResNet50.keras
+--postprocess "lambda x : x[0]" \
+--output_path out \
+--batch 2048
+```
+
+> [!NOTE]
+> reports can be found in `tf_injector/out`

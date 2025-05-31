@@ -10,7 +10,7 @@ class Metric(metaclass=ABCMeta):
     - Metric functions that return a tuple containing the metrics
     - Output functions that return a tuple that will be used to fill the report file
     """
-    def __init__(self, clean_scores: tf.Tensor, clean_labels: tf.Tensor, labels: tf.Tensor):
+    def __init__(self, clean_scores : tf.Tensor, labels: tf.Tensor, num_classes: int):
         """
         Initialises the class with data related to the clean inference and the labels
         Args:
@@ -19,20 +19,21 @@ class Metric(metaclass=ABCMeta):
             labels: ground-truth labels of the dataset
         """
         self.clean_scores = clean_scores
-        self.clean_labels = clean_labels
         self.labels = labels
+        self.num_classes = num_classes
+        self.clean_labels = self._evaluate_clean_labels(clean_scores) if clean_scores is not None else None
 
-    @abstractmethod
-    def clean_metric(self) -> tuple[int, ...]:
-        """
-        This function uses the information retained in the class (clean scores and labels)
-        to compute the metrics related to the clean run.
-        """
-        pass
+    def _evaluate_clean_labels(self, clean_scores: tf.Tensor) -> tf.Tensor:
+        clean_scores = tf.argmax(clean_scores, axis=-1)
+        clean_scores = tf.cast(clean_scores, tf.int64)
+        return clean_scores
 
     @abstractmethod
     def clean_output(self) -> tuple:
         """
+        This function uses the information retained in the class (clean scores and labels)
+        to compute the metrics related to the clean run.
+
         This function will be called by the injector to obtain the values that will
         be written in the report file as the golden row (e.g. add commas if the metrics are 
         less than the faulty ones).
@@ -48,5 +49,13 @@ class Metric(metaclass=ABCMeta):
         """
         This function will be called by the injector and provides the values that will
         be written in the report files in the faulty rows.
+        """
+        pass
+
+    @abstractmethod
+    def get_header(self) -> tuple[str]:
+        """
+        This function will be called by the injector to obtain the header of the CSV file.
+        The header is a list of strings that will be used as the first row of the CSV file.
         """
         pass

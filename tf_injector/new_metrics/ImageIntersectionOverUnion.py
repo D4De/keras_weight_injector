@@ -1,45 +1,82 @@
 from tf_injector.new_metrics.metric import Metric
+import tensorflow as tf
 
-def compute_IOU(x1, x2, numclass):
-    # x1 = tf.argmax(x1, axis=-1, output_type=tf.dtypes.uint16)
-    # x2 = tf.argmax(x2, axis=-1, output_type=tf.dtypes.uint16)
+def compute_IOU(out, label, numclass):
+    
     ious = []
     for cls in range(numclass):
-        clsx1 = x1 == cls
-        clsx2 = x2 == cls
+        clsx1 = out == cls
+        clsx2 = label == cls
         inter = tf.reduce_sum(
             tf.cast(tf.logical_and(clsx1, clsx2), tf.uint64),
-            axis=[1,2]
+            axis=[0,1,2]
         )
         union = tf.reduce_sum( 
             tf.cast(tf.logical_or(clsx1, clsx2),tf.uint64),
-            axis=[1,2]
+            axis=[0,1,2]
         )
         iou = inter / union
         ious.append(iou)
     ious = tf.transpose(tf.stack(ious))
     return ious
 
-class ImageIntersectionOverUnionMetric(Metric):
-    def __init__(self, num_classes):
-        self.num_classes = num_classes
+class ImageIntersectionOverUnion(Metric):
+    def __init__(self, clean_scores: tf.Tensor, labels: tf.Tensor, num_classes: int = 21):
+        '''
+        Tensor dimension of the parameters:
+        clean_scores : (2, batch, height, width, num_classes)
+        labels : (batch, height, width)
+        '''
+        super().__init__(clean_scores, labels, num_classes)
+        if clean_scores is not None:
+            self.num_classes = clean_scores.shape[-1] 
+            self.clean_labels = self.__evaluate_clean_labels(clean_scores) 
 
-    def __call__(self, clean_scores, clean_labels, labels):
-        super().__init__(None, clean_labels, labels)
-        return self
-       
-    def clean_metric(self):
-        return compute_IOU(self.clean_scores, self.labels)
-        
+
+    def __evaluate_clean_labels(self, x : tf.Tensor) -> tf.Tensor:
+        """
+        clean_score : (batch, height, width, num_classes)
+        clean_label : (batch, height, width)
+        """
+        x = tf.argmax(x, axis=-1)
+        return x
+
     def clean_output(self):
-       return [1] * self.num_classes
+        metric = compute_IOU(self.clean_labels, self.labels, self.num_classes) # (dataset, 21)
+        #mean = tf.experimental.numpy.nanmean(metric, axis=0) # (21,)
+        tupl = tuple(metric.numpy().tolist())
+
+        return tupl + (None,) * self.num_classes
 
     def faulty_output(self, faulty_scores, with_respect_to_labels=False):
-        reference = self.clean_labels
-        if with_respect_to_labels:
-            reference = self.labels
-        return compute_IOU(
-            reference,
-            faulty_scores,
-            self.num_classes
+
+        faulty_label = self.__evaluate_clean_labels(faulty_scores)
+        output = list()
+
+        # metric on (faulty_scores, labels)
+        metric_on_labels = compute_IOU(
+            out = faulty_label,
+            label = self.labels,
+            numclass= self.num_classes
         )
+        #metric_on_labels = tf.experimental.numpy.nanmean(metric_on_labels, axis=0) # (data, 21) -> (21,)
+        metric_on_labels = metric_on_labels.numpy().tolist()
+        output.extend(metric_on_labels)
+
+        # metric on (faulty_scores, clean_labels)
+        metric_on_clean_score = compute_IOU(
+            out = faulty_label,
+            label = self.clean_labels,
+            numclass= self.num_classes
+        )
+        #metric_on_clean_score = tf.experimental.numpy.nanmean(metric_on_clean_score, axis=0) # (data, 21) -> (21,)
+        metric_on_clean_score = metric_on_clean_score.numpy().tolist()
+        output.extend(metric_on_clean_score)
+
+        return tuple(output)
+
+    def get_header(self):
+        
+        label = (f"IOU_on_label_{i}" for i in range(self.num_classes))
+        golden = (f"IOU_on_golden_{i}" for i in range(self.num_classes))
+        return tuple(label) + tuple(golden)

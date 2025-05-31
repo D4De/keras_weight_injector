@@ -6,14 +6,25 @@ import os
 import shutil
 import json
 
-from tf_injector.utils import SUPPORTED_MODELS, SUPPORTED_DATASETS, DEFAULT_REPORT_DIR, IMAGE_CLASSIFICATION_REPORT_HEADER
-from tf_injector.loader import load_network
-from tf_injector.injector import Injector
-from tf_injector.metrics import ImageClassificationMetric
-from tf_injector.writer import CampaignWriter
 from tf_injector.campaign import Campaign
 
+def get_avaliable_datasets() -> str:
+    """
+    Returns a string with the names of the avaliable datasets
+    """
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    loaders_path = os.path.join(base_path, "loaders")
+    datasets = [d for d in os.listdir(loaders_path) if os.path.isdir(os.path.join(loaders_path, d))]
+    return ", ".join(datasets)
 
+def get_avaliable_metrics() -> str:
+    '''
+    Returns a string with the names of the avaliable metrics
+    '''
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    metrics_path = os.path.join(base_path, "new_metrics")
+    metrics = [f[:-3] for f in os.listdir(metrics_path) if f.endswith('.py') and f != '__init__.py' and f != 'metric.py']
+    return ", ".join(metrics)
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -22,101 +33,34 @@ def parse_args():
     )
     subparsers = parser.add_subparsers(dest="command", help="Different commands")
 
-    # RUN_OLD (old implementation)
-    run_default_parser = subparsers.add_parser('run_old', help='Run the old implementation')
-    run_default_parser.add_argument(
-        "--dataset",
-        "-d",
-        type=str,
-        choices=SUPPORTED_DATASETS,
-        required=True,
-        help="Dataset to use",
-    )
-    run_default_parser.add_argument(
-        "--batch-size", "-b", type=int, default=512, help="Test set batch size"
-    )
-    run_default_parser.add_argument(
-        "--network-name",
-        "-n",
-        type=str,
-        required=True,
-        help="Target network",
-        choices=SUPPORTED_MODELS,
-    )
-    run_default_parser.add_argument(
-        "--fault-list",
-        "-f",
-        type=str,
-        required=False,
-        help="Path to Fault list",
-    )
-    run_default_parser.add_argument(
-        "--output-path",
-        "-o",
-        type=str,
-        required=False,
-        default=DEFAULT_REPORT_DIR,
-        help="Path to the generated output",
-    )
-    run_default_parser.add_argument(
-        "--resume-from",
-        "-r",
-        type=int,
-        required=False,
-        default=0,
-        help="Resume experiment from a certain injection id",
-    )
-    run_default_parser.add_argument(
-        "--save-scores",
-        "-s",
-        action="store_true",
-        help="Save Injection Data",
-    )
-
-    run_default_parser.add_argument(
-        "--use-tf",
-        "-u",
-        action="store_true",
-        help="Use TensorFlow instead of NumPy for dataset preprocessing"
-    )
-
-    run_default_parser.add_argument(
-        "--seed", default=None, type=int, help="random seed for determinism"
-    )
-
-    parser.add_argument(
-        "--validate",
-        action="store_true",
-        help="Validate the fault list before running the campaign",
-    )
-
-    # Comandi di LOAD : ld + {cosa da loadare}
+    # Load Commands : ld + <dataset/metric>
     load_parser = subparsers.add_parser('lddataset', help='load dataset')
     load_parser.add_argument(
         '--path_to_function', 
         '-fp', 
         required=True, 
-        help='path of the loading python file'
+        help='Path of the python file that contains the function to load the dataset'
         )
     load_parser.add_argument(
         '--function_name', 
         '-fn', 
         required=True, 
-        help='name of the top function of the loading file'
+        help='Name of the top function of the loading file'
         )
     load_parser.add_argument(
         '--dataset_name', 
         '-n', 
         required=True, 
-        help='dataset name, if present you substitute the python file with this one'
+        help='Dataset name to load, it will be used to create a directory in the loaders folder'
         )
-
+    
+    # Comando LOAD METRIC : ldmetric
     load_parser = subparsers.add_parser('ldmetric', help='load metric')
     load_parser.add_argument(
-        '--path_to_class', 
+        '--path', 
         '-p', 
         required=True, 
-        help='path of the loading python file with the class'
+        help='Path of the loading python file with the class. Name of the class must be the same as the file name'
         )
 
     # Comando RUN (to confing a custom campaign)
@@ -124,104 +68,99 @@ def parse_args():
     run_parser.add_argument(
         '--dataset', 
         '-d', 
-        required=True, 
-        help='name of the dataset'
+        required=True,
+        help=f"Name of the dataset. Avaliables : {get_avaliable_datasets()}\n"
         ) 
     run_parser.add_argument(
-        '--preprocessing', 
+        '--dataset_path', 
+        '-dp', 
+        help='Path to the dataset directory',
+        default="lambda x: x"
+    )
+    run_parser.add_argument(
+        '--postprocess', 
         '-p', 
-        help='Preprocessing function'
-        )
+        help='Lambda expression for the function to apply to the output of the inference of the model\nEXAMPLE: "lambda x: x" (default)',
+        default="lambda x: x"
+    )
     run_parser.add_argument(
         '--metrics', 
         '-met', 
         required=True, 
-        help='Metriche da utilizzare'
+        help=f"Set of metrics to use for the campaign, separated by commas.\nEXAMPLE: metric1,mectric2,metric3.\nAvaliable metrics: {get_avaliable_metrics()}\n"
         )
     run_parser.add_argument(
         '--fault_list', 
         '-fl', 
-        help='path to the fault list'
+        help='Path to the fault list'
         )
     run_parser.add_argument(
         '--model', 
         '-m', 
         required=True, 
-        help='path to the model'
+        help='Path to the model model.keras, model.h or the model directory'
         )
     run_parser.add_argument(
         '--output_path', 
         '-o', 
-        help='the campaign report will be saved here'
+        default='out',
+        help='Path to the output directory where the results will be saved',
         )
-
-    # Comando SHOW
-    show_parser = subparsers.add_parser('show', help='Show all the catalogue')
-    show_parser.add_argument(
-        '--all', 
-        '-all', 
-        help='Show all the catalogue'
-        )
-    show_parser.add_argument(
-        '--dataset', 
-        '-d', 
-        help='Show the loaded dataset with associated functions'
-        )
-
-    # Comando RESET (delete all the user plugins)
-    reset_parser = subparsers.add_parser('reset', help='delete anything the user plugged in')
-    return parser.parse_args()
-
-
-def run_old(args):
-    if args.seed:
-        tf.config.experimental.enable_op_determinism()
-        tf.keras.utils.set_random_seed(args.seed)
-        tf.keras.backend.manual_variable_initialization(True)
-
-    network, dataset = load_network(args.network_name, args.dataset, use_tf=args.use_tf)
-    injector = Injector(network, dataset)
+    run_parser.add_argument(
+        '--batch', 
+        '-b', 
+        type=int, 
+        default=32, 
+        help='Batch size for the campaign'
+    )
+    run_parser.add_argument(
+        '--save_scores', 
+        '-s',
+        help='Save scores',
+    )
+    run_parser.add_argument(
+        '--resume-from', 
+        '-r', 
+        type=int, 
+        default=0, 
+        help='Resume injection from this index'
+    )
+    run_parser.add_argument(
+        '--validate', 
+        '-v', 
+        help='Validate the fault list, checking if the layers are present in the model'
+    )
+    run_parser.add_argument(
+        '--seed', 
+        '-se', 
+        type=int, 
+        default=None, 
+        help='Set a seed for determinism'
+    )
     
-    # add metric choice logic here
-    metric = ImageClassificationMetric
-
-    # add report header choice logic here
-    report_header = IMAGE_CLASSIFICATION_REPORT_HEADER
-
-    if args.fault_list is None:
-        output, labels = injector.run_inference(args.batch_size)
-        top_1, top_5 = metric(output, labels, labels).clean_metric()
-        print(
-            f"GOLD stats:\nimages: {len(dataset)}\ntop 1 accuracy: {top_1}\ntop 5 accuracy: {top_5}"
-        )
-        if args.save_scores:
-            cw = CampaignWriter(args.dataset, args.network_name, args.output_path)
-            cw.save_scores(output)
-    else:
-        injector.load_fault_list(args.fault_list, resume_from=args.resume_from)
-        if args.validate:
-            print("Running validation")
-            injector.validate()
-
-        with CampaignWriter(args.dataset, args.network_name, report_header, args.output_path) as cw:
-            injector.run_campaign(
-                batch=args.batch_size,
-                metrics=[metric],
-                outputter=cw,
-                save_scores=args.save_scores,
-            )
+    return parser.parse_args()
 
 def run(args):
     if args.metrics:
         metrics_list = args.metrics.replace(" ", "").split(",")
 
+    save_scores = True if args.save_scores else False
+    resume_from = args.resume_from if args.resume_from else 0
+    validate_fault_list = True if args.validate else False
+
     campaign = Campaign(
         dataset_name = args.dataset,
+        dataset_path = args.dataset_path,
         network_path = args.model,
         output_path = args.output_path,
         fautl_list_path = args.fault_list,
-        preporcessig = lambda x: x,   # (tf.data.Dataset) -> tf.data.Dataset
+        preporcessig = args.postprocess,   # (tf.data.Dataset) -> tf.data.Dataset
         metrics_list = metrics_list,
+        batch_size = args.batch,
+        save_scores = save_scores,
+        resume_from = resume_from,
+        validate_fault_list = validate_fault_list,
+        seed = args.seed
     )
     campaign.run()
     return
@@ -285,16 +224,27 @@ def lddataset(args):
     return
 
 def ldmetric(args):
-    return
+    
+    path = args.path
+    metric_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "new_metrics")
 
-def show(args):
+    # check path leads to a python file
+    if (not path.endswith(".py")) :
+        raise ValueError(f"The path doesn't lead to a python (.py) file : {path}")
+
+    # check file validity
+    if (not os.path.exists(path) or not os.path.isfile(path)):
+        raise FileNotFoundError(f"The file {path} doesn't exist or is not a file")
+
+    # copy the file path in target_dir
+    shutil.copy2(path, metric_dir)
+    print(f"Added new metric file: {path} → {metric_dir}")
+
     return
 
 def main(args):
-    if args.command == "run_old":
-        run_old(args)
     
-    elif args.command == "run":
+    if args.command == "run":
         run(args)
     
     elif args.command == "lddataset":
@@ -302,9 +252,6 @@ def main(args):
     
     elif args.command == "ldmetric":
         ldmetric(args)
-    
-    elif args.command == "show":
-        show(args)
 
     else:
         raise ValueError(f"Unknown command: {args.command}")

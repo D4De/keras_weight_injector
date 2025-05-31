@@ -39,21 +39,29 @@ top_5_accuracy = make_k_accuracy(5)
 
 
 class ImageClassificationMetric(Metric):
-    def __init__(self, clean_scores: tf.Tensor, clean_labels: tf.Tensor, labels: tf.Tensor):
-        # TODO reimplement metrics using tf.Tensor
-        super().__init__(clean_scores.numpy(), clean_labels.numpy(), labels.numpy())
+    def __init__(self, clean_scores: tf.Tensor, labels: tf.Tensor, num_classes):
+        clean_scores = clean_scores.numpy() if clean_scores is not None else None
+        labels = labels.numpy() if labels is not None else None
+
+        super().__init__(clean_scores, labels, num_classes)
+        if clean_scores is not None:
+            self.clean_labels = self._evaluate_clean_labels(clean_scores)
+            self.num_classes = len(np.unique(self.clean_labels))
+
         self.top_1_robustness = make_k_robustness(1, self.clean_labels)
         self.top_5_robustness = make_k_robustness(5, self.clean_labels)
         self.masked_counter = make_masked_counter(self.clean_scores)
 
-
-    def clean_metric(self) -> tuple[int, ...]:
-        return top_1_accuracy(self.clean_scores, self.labels), top_5_accuracy(self.clean_scores, self.labels)
+    def _evaluate_clean_labels(self, clean_score: np.ndarray) -> np.ndarray:
+        """
+        (data, num_classes) -> (label)
+        """
+        return np.argmax(clean_score, axis=-1).reshape(-1, 1) #.astype(np.uint8)
 
     def clean_output(self) -> tuple:
-        metric = self.clean_metric()
+        metric = top_1_accuracy(self.clean_scores, self.labels), top_5_accuracy(self.clean_scores, self.labels)
         padding = [None]
-        return (*metric, *(padding*4))
+        return (*metric, *(padding*5))
 
     def faulty_output(self, faulty_scores: tf.Tensor, with_respect_to_labels:bool=False) -> tuple[int, ...]:
         faulty_scores = faulty_scores.numpy()
@@ -68,4 +76,15 @@ class ImageClassificationMetric(Metric):
             masked_count,
             non_critical_counter(top_1_robust, masked_count),
             critical_counter(len(self.clean_labels), top_1_robust),
+        )
+    
+    def get_header(self) -> tuple[str, ...]:
+        return (
+            "top_1_correct",
+            "top_5_correct",
+            "top_1_robust",
+            "top_5_robust",
+            "masked",
+            "non_critical",
+            "critical"
         )

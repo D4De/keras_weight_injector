@@ -2,8 +2,8 @@ import sys
 # We do the assumption that tf_injector is not installed in your system. 
 # To make it work anyways, we manually add the path of the injector to the PYTHONPATH
 # For more info: https://docs.python.org/3/using/cmdline.html#environment-variables
-sys.path.append("/Users/domenicopalumbo/keras_weight_injector")
-import tf_injector as kwi 
+sys.path.append("../../")
+import gg as kwi 
 
 from tqdm.auto import tqdm
 
