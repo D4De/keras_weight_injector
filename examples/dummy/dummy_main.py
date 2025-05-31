@@ -7,7 +7,7 @@ import tensorflow as tf
 # For more info: https://docs.python.org/3/using/cmdline.html#environment-variables
 import sys
 sys.path.append("../../")
-import tf_injector as kwi 
+import gg as kwi 
 
 keras = tf.keras
 

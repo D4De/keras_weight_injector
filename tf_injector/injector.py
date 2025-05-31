@@ -3,25 +3,25 @@ import tensorflow as tf  # type:ignore
 from tensorflow import keras  # type:ignore
 from tqdm.auto import tqdm  # type:ignore
 import csv
-import shutil
 
-from dataclasses import dataclass, field
 from contextlib import contextmanager
 from typing import Type, Callable, Iterable
 
 from tf_injector.writer import CampaignWriter
 from tf_injector.utils import INJECTED_LAYERS_TYPES
-from tf_injector.metrics import Metric
+from tf_injector.new_metrics.metric import Metric
+from tf_injector.faultlist import FaultList
 
 FaultType = tuple[str, tuple[int, ...], int]
 
 
+'''
 @dataclass
 class FaultList:
     # [("layer", (coords,..), bitpos), ...]
     faults: list[FaultType] = field(default_factory=lambda: [])
     resume_idx: int = 0
-
+'''
 
 class Injector:
     """
@@ -34,6 +34,9 @@ class Injector:
                  dataset: tf.data.Dataset,
                  transform_output: Callable = lambda x: x,
                  transform_label: Callable = lambda x: x,
+                 faults : FaultList = None,
+                 num_classes : int = 0,
+                 seed: int = None
                  ):
         """
         Args:
@@ -51,13 +54,20 @@ class Injector:
             )  # extracts all layers
             if isinstance(layer, INJECTED_LAYERS_TYPES)
         }
-        self.faults = FaultList()
+        self.faults = faults
         self.faulty = False
+
+        self.num_classes = num_classes
 
         # Note: if necessary, transform_output can do the type cast from 
         # tensorflow to numpy
         self.transform_output = transform_output
         self.transform_label = transform_label
+
+        if seed is not None:
+            tf.config.experimental.enable_op_determinism()
+            tf.keras.utils.set_random_seed(seed)
+            tf.keras.backend.manual_variable_initialization(True)
 
     def load_fault_list(self, fault_path: str, resume_from: int = 0):
         """
@@ -69,6 +79,7 @@ class Injector:
         self._reset_fault()
         included_layers = set()
         self.faults.resume_idx = resume_from
+        
         with open(fault_path, "r") as f:
             reader = csv.reader(f)
             next(iter(reader))  # skip header
@@ -96,9 +107,8 @@ class Injector:
             assert (
                 len(not_in_network) == 0
             ), f"Fault layers and target layers didn't match: \n \
-some layers are not present in the network: {included_layers-target_layers}"
+            some layers are not present in the network: {included_layers-target_layers}"
             
-
     # TODO: remove this method. Just use tqdm as is in the appropriate points
     @staticmethod
     def _tqdm(iterable, faulty: bool, desc: str, position: int) -> tqdm:
@@ -162,7 +172,6 @@ some layers are not present in the network: {included_layers-target_layers}"
         metrics: Iterable[Type[Metric]],
         outputter: CampaignWriter,
         save_scores: bool = False,
-        metrics_on_labels: bool = False,
     ):
         """
         Runs a campaign with the loaded fault list
@@ -179,67 +188,63 @@ some layers are not present in the network: {included_layers-target_layers}"
                 "Attempting to run a campaign without a fault list loaded"
             )
 
-        # if not isinstance(metrics, Iterable):
-        #     metrics = [metrics]
-
         print("running inference")
         gold_scores, labels = self.run_inference(batch)  # clean run
         print("running prediction")
-        # TODO: generalize this piece to have a function to compute the labels!!!
-        # As is, it doesn't work with both image classification and segmentation.
-        # The code here should use the same self.transform_output to take the labels 
-        # from the gold_scores!!!
-        gold_labels = tf.argmax(gold_scores, axis=1) #, keepdims=True)
-        gold_labels = tf.expand_dims(gold_labels, axis=1) # for compatibility with numpy's keepdims argument
-        gold_labels = self.transform_label(gold_labels) # Arbitrary transformation for the metrics
+
+        # TODO : add post-porcessing function for the output
+
         metric_instances = [
-            metric(gold_scores, gold_labels, labels) for metric in metrics
+            metric(gold_scores, labels, self.num_classes) for metric in metrics
         ]
 
         golden_values = []
         for metric in metric_instances:
-            golden_values.extend(metric.clean_output())
-            if metrics_on_labels:
-                golden_values.extend(metric.clean_output())
+            golden_values.extend(list((metric.clean_output())))
+
         gold_output = (len(labels), *golden_values)
+
         outputter.write_gold(gold_output)
+
         if save_scores:
             outputter.save_scores(gold_scores)
 
         fault_id = self.faults.resume_idx
-        # pbar = self._tqdm(self.faults.faults[fault_id:], True, "Injection", 0)
+
         pbar = tqdm(
             self.faults.faults[fault_id:],
             colour = "red", # because it's injected 
             leave=True,
-            desc = "Injection"
+            desc = "Injection",
+            initial= fault_id,
+            total = len(self.faults.faults)
         )
+
         print("Starting campaign...")
-        if metrics_on_labels:
-            print("NOTE: the metrics on labels are saved **AFTER** the metrics on golden")
+        
         for fault in pbar:
             with self._apply_fault(fault):
                 faulty_scores, labels = self.run_inference(batch)
                 metric_values = []
                 for metric in metric_instances:
                     value = metric.faulty_output(faulty_scores)
-                    value = tf.cast(value, tf.double)
-                    if value.shape.rank == 1:
-                        value = tf.expand_dims(value, 1)
-                    metric_values.append(value)
+                    #value = tf.cast(value, tf.double)
+                    #if value.shape.rank == 1:
+                    #    value = tf.expand_dims(value, 1)
+                    metric_values.extend(list(value))
 
-                    if metrics_on_labels:
-                        value_label = metric.faulty_output(
-                            faulty_scores,
-                            with_respect_to_labels=True
-                        )
-                        value_label = tf.cast(value_label, tf.double)
-                        if value_label.shape.rank == 1:
-                            value_label = tf.expand_dims(value_label, 1)
-                        metric_values.append(value_label)
+                    #if metrics_on_labels:
+                    #    value_label = metric.faulty_output(
+                    #        faulty_scores,
+                    #        with_respect_to_labels=True
+                    #    )
+                     #   value_label = tf.cast(value_label, tf.double)
+                     #   if value_label.shape.rank == 1:
+                     #       value_label = tf.expand_dims(value_label, 1)
+                     #   metric_values.extend(value_label)
                 
-                metric_values = tf.concat(metric_values, axis=1)
-
+                #metric_values = tf.concat(metric_values, axis=1)
+                metric_values = tuple(metric_values)
                 outputter.write_fault(
                     fault_id,
                     len(labels),
