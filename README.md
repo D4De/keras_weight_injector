@@ -190,7 +190,7 @@ python -m tf_injector lddataset \
 > if a dataset with such name is already present, it gets swapped with the latter one Check the current avaliable dataset with the `python -m tf_injector run --help` command.
 
 ### Metrics
-- Create a python file with a class that extends Metric. Follow the tmplate in `./tmplates`. The name of the file must be equal to the name of the class.
+- Create a python file with a class that extends Metric. Follow the template in `./templates`. The name of the file must be equal to the name of the class.
 
 - Run the ldmetric command in the injector
 ```

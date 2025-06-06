@@ -1,4 +1,4 @@
-from tf_injector.new_metrics.metric import Metric
+from tf_injector.metrics.metric import Metric
 from typing import Callable
 import numpy as np
 import tensorflow as tf

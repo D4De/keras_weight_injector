@@ -7,7 +7,7 @@ import json
 from tf_injector.injector import Injector
 from tf_injector.faultlist import FaultList
 from tf_injector.writer import CampaignWriter
-from tf_injector.new_metrics.metric import Metric
+from tf_injector.metrics.metric import Metric
 
 
 class Campaign:

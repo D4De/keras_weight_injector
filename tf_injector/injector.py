@@ -9,7 +9,7 @@ from typing import Type, Callable, Iterable
 
 from tf_injector.writer import CampaignWriter
 from tf_injector.utils import INJECTED_LAYERS_TYPES
-from tf_injector.new_metrics.metric import Metric
+from tf_injector.metrics.metric import Metric
 from tf_injector.faultlist import FaultList
 
 FaultType = tuple[str, tuple[int, ...], int]
