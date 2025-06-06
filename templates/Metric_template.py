@@ -2,7 +2,7 @@ from tf_injector.new_metrics.metric import Metric
 import numpy as np
 import tensorflow as tf
 
-class NewMetric(Metric):
+class Metric_template(Metric):
     def __init__(self, clean_scores, labels, num_classes):
         super().__init__(clean_scores, labels, num_classes)
         if clean_scores is not None:
