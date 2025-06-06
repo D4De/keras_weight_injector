@@ -65,7 +65,7 @@ class Campaign:
 
         # find python file corresponded to the dataset name
         base_path = os.path.dirname(os.path.abspath(__file__))
-        target_dir = os.path.join(base_path, "loaders", dataset_name)
+        target_dir = os.path.join(base_path, "dataset_loaders", dataset_name)
 
         if not os.path.exists(target_dir) or not os.path.isdir(target_dir):
             raise FileNotFoundError(f"Dataset {dataset_name} is not loaded")

@@ -187,7 +187,7 @@ def lddataset(args):
     
     # create name dir if non present
     base_path = os.path.dirname(os.path.abspath(__file__))
-    target_dir = os.path.join(base_path, "loaders", name)
+    target_dir = os.path.join(base_path, "dataset_loaders", name)
     if os.path.exists(target_dir):
         print(f"Dataset {name} was already loaded\nUpdating loading function...")
     else:
@@ -226,7 +226,7 @@ def lddataset(args):
 def ldmetric(args):
     
     path = args.path
-    metric_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "new_metrics")
+    metric_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "metrics")
 
     # check path leads to a python file
     if (not path.endswith(".py")) :
