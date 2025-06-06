@@ -1,5 +1,5 @@
 # tf_injector
-This project contains a tool for injecting faults in the weights of TensorFlow models and used for the experiments supporting the benchmark suite in [dnn-benchmarks](https://gitlab.pmcs2i.ec-lyon.fr/spappala/dnn-benchmarks).
+This project contains a tool for injecting faults in the weights of TensorFlow models and used for the experiments supporting the benchmark suite in [dnn-benchmarks](https://github.com/ReADLBench/dnn-benchmark).
 
 ## Project Collaboration
 
