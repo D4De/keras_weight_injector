@@ -9,8 +9,21 @@ from typing import Type, Callable, Iterable
 
 from tf_injector.writer import CampaignWriter
 from tf_injector.utils import INJECTED_LAYERS_TYPES
-from tf_injector.metrics.metric import Metric
 from tf_injector.faultlist import FaultList
+
+# load metrics from the metrics package
+import sys
+import os
+
+original_path = sys.path.copy()
+metric_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    , "metrics"
+)
+print(f"Loading metrics from {metric_dir}")
+sys.path.insert(0, metric_dir)
+from metric import Metric
+sys.path = original_path
 
 FaultType = tuple[str, tuple[int, ...], int]
 

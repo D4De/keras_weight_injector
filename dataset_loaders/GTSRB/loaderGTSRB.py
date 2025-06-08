@@ -17,8 +17,9 @@ from tqdm import tqdm
 
 import sys
 
-DEFAULT_DATASET_PATH = Path("tf_injector/loaders/GTSRB/dataset")
-
+# from path_to_tf_injector/keras_tf_injector/datset_loaders/GTSRB/loaderGTSRB.py (__file__)
+# to path_to_tf_injector/keras_tf_injector/datset_loaders/GTSRB/dataset (default dataset path)
+DEFAULT_DATASET_PATH = Path(__file__).parent / "dataset"
 
 
 # DAWNLOAD DATASET
@@ -107,37 +108,26 @@ def download_gtsrb():
     os.remove(gtsrb_path / "GT-final_test.csv")
     shutil.rmtree(gtsrb_path / "GTSRB")
 
+def preprocess(dataset : tf.data.Dataset) -> tf.data.Dataset:
+    """
+    Preprocesses the dataset by normalizing the images and converting the labels to one-hot encoding.
+    """
+    def preprocess_image(image, label):
+        mean = tf.constant([0.3403, 0.3121, 0.3214], dtype=tf.float32)
+        std = tf.constant([0.2724, 0.2608, 0.26690], dtype=tf.float32)
 
-def load_gtsrb(DATASET_PATH: str) -> tf.data.Dataset:
+        image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+        image = (image - mean) / std
+        
+        return image, label
+
+    dataset = dataset.map(preprocess_image)
+    return dataset
+
+def load_gtsrb(DATASET_PATH):
     dt_path = DEFAULT_DATASET_PATH / "GTSRB_keras" / "GTSRB_keras"
     if not os.path.exists(dt_path):
         download_gtsrb()
-    dataset = tf.data.Dataset.load(str(dt_path), compression="GZIP")
-
-
-    # convert to numpy
-    data_list = [(img, label) for img, label in dataset.as_numpy_iterator()]
-    
-    # preprocess images
-    processed_images = []
-    processed_labels = []
-    
-    for image, label in data_list:
-
-        mean = np.array([0.3403, 0.3121, 0.3214], dtype=np.float32)
-        std = np.array([0.2724, 0.2608, 0.26690], dtype=np.float32)
-
-        image = np.array(image, dtype=np.float32)
-        image = image / np.float32(255.0)
-        image = (image - mean) / std
-        
-        label = np.array(label, np.uint8)
-
-        processed_images.append(image)
-        processed_labels.append(label)
-
-    return tf.data.Dataset.from_tensor_slices(
-        (np.array(processed_images), np.array(processed_labels))
-    )
-
+    dt = tf.data.Dataset.load(str(dt_path), compression="GZIP")
+    return preprocess(dt)
 

@@ -1,4 +1,3 @@
-import os
 from typing import List
 import tensorflow as tf
 from tensorflow import keras
@@ -7,7 +6,21 @@ import json
 from tf_injector.injector import Injector
 from tf_injector.faultlist import FaultList
 from tf_injector.writer import CampaignWriter
-from tf_injector.metrics.metric import Metric
+
+
+# load metrics from the metrics package
+import sys
+import os
+
+original_path = sys.path.copy()
+metric_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    , "metrics"
+)
+print(f"Loading metrics from {metric_dir}")
+sys.path.insert(0, metric_dir)
+from metric import Metric
+sys.path = original_path
 
 
 class Campaign:
@@ -64,7 +77,7 @@ class Campaign:
 
 
         # find python file corresponded to the dataset name
-        base_path = os.path.dirname(os.path.abspath(__file__))
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         target_dir = os.path.join(base_path, "dataset_loaders", dataset_name)
 
         if not os.path.exists(target_dir) or not os.path.isdir(target_dir):
@@ -135,8 +148,8 @@ class Campaign:
     def __load_metrics(self) -> List[type[Metric]]:
 
         metrics = []
-        base_path = os.path.dirname(os.path.abspath(__file__))
-        metrics_dir = os.path.join(base_path, "new_metrics")
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        metrics_dir = os.path.join(base_path, "metrics")
         files = os.listdir(metrics_dir)
         metrics_available = [f for f in files if f.endswith('.py')]
 

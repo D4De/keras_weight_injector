@@ -12,8 +12,8 @@ def get_avaliable_datasets() -> str:
     """
     Returns a string with the names of the avaliable datasets
     """
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    loaders_path = os.path.join(base_path, "loaders")
+    base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    loaders_path = os.path.join(base_path, "dataset_loaders")
     datasets = [d for d in os.listdir(loaders_path) if os.path.isdir(os.path.join(loaders_path, d))]
     return ", ".join(datasets)
 
@@ -21,8 +21,8 @@ def get_avaliable_metrics() -> str:
     '''
     Returns a string with the names of the avaliable metrics
     '''
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    metrics_path = os.path.join(base_path, "new_metrics")
+    base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    metrics_path = os.path.join(os.path.join(base_path, "metrics"))
     metrics = [f[:-3] for f in os.listdir(metrics_path) if f.endswith('.py') and f != '__init__.py' and f != 'metric.py']
     return ", ".join(metrics)
 
@@ -186,7 +186,7 @@ def lddataset(args):
         raise ValueError(f"The function {function_name} is not in the file {path}")
     
     # create name dir if non present
-    base_path = os.path.dirname(os.path.abspath(__file__))
+    base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     target_dir = os.path.join(base_path, "dataset_loaders", name)
     if os.path.exists(target_dir):
         print(f"Dataset {name} was already loaded\nUpdating loading function...")
@@ -226,7 +226,9 @@ def lddataset(args):
 def ldmetric(args):
     
     path = args.path
-    metric_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "metrics")
+    metric_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+        "metrics")
 
     # check path leads to a python file
     if (not path.endswith(".py")) :

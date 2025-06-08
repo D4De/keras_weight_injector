@@ -1,4 +1,4 @@
-from tf_injector.metrics.metric import Metric
+from metric import Metric
 import numpy as np
 import tensorflow as tf
 

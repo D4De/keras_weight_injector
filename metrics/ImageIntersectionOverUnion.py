@@ -1,4 +1,4 @@
-from tf_injector.metrics.metric import Metric
+from metric import Metric
 import tensorflow as tf
 
 def compute_IOU(out, label, numclass):
