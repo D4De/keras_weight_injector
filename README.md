@@ -6,6 +6,16 @@ This project contains a tool for injecting faults in the weights of TensorFlow m
 This project has been implemented at [Politecnico di Milano](https://www.polimi.it/) as a part of a collaboration with research teams at [Politecnico di Torino](https://www.polito.it/) and [École Centrale de Lyon](https://www.ec-lyon.fr/).
 
 
+## Project Structure
+- **dataset_loaders**: scripts to load the dataset form a folder to the tensorflow structure `tensorflow.data.Dataset used` for inference.
+- **metrics** : scripts to compute the metrics from the labels and the network output.
+- **templates** : template files for implementing new datasets or metrics
+- **testing** : tool to spot differencese bethween two outout of the tool. Useful to mantain consistency when updating the code.
+- **tf_injector** : code of the injector
+- **tools** : support tools
+
+
+
 ## Setup
 1. Ensure you have Python 3.9 installed in your working environment
 2. Create a virtual environment
@@ -160,25 +170,26 @@ The folder `testing` contains testing utilities to validate the result of the in
 ## Integrating Additional DNN Models
 
 ### Models and Fault Lists
-Use the absolute path of the model and the fault list in the run prompt
+The `python -m tf_injector run [args]` command of the tf_injector module supports external models and fault lists. The `--model` parameter requires the absolute path to a **.keras** file, while the `--fault_list` parameter requires the absolute path to a **.csv** file formatted according to the input requirements.
 ```
 python -m tf_injector run \
---model /PATH_TO_MODEL
---fault_list  /PATH_TO_LIST
+--model /PATH_TO_MODEL/model.keras
+--fault_list  /PATH_TO_LIST/fl.csv
 [... other ARGS]
 ```
 
 ### Dataset
-- Create a python script with a function that returns a `tensorflow.data.Dataset`
+To add a new dataset create in your local machine a python file structured as `template/Dataset_template.py`.
 ```
 # new_DATSASET_LOADER.py
 import tensorflow as tf
 
-def load() -> tf.data.Dataset :
+def load(DIRPATH : str) -> tf.data.Dataset :
     [...]
 ```
+The purpose of this file is to create a function that traverses through the original directory structure of the dataset (since each dataset has its own unique organization with no universal pattern) and converts it into a TensorFlow object suitable for model inference. The dataset images, typically stored as .png or .jpg files, need to be transformed into tensors of the appropriate dimensions for the model input, preprocessed if required, and organized into a tensorflow.data.Dataset structure in the format of (img1, label1), (img2, label2), [...]. The code can be organized into multiple subroutines as needed, as long as you specify the main entry point function in the --function_name parameter.
 
-- use the `lddataset` command in the injector
+Then the file can be loaded into the injector running this command:
 ```
 python -m tf_injector lddataset \
 --dataset_name new_DATASET \
@@ -186,16 +197,20 @@ python -m tf_injector lddataset \
 --function_name load
 ```
 
+When running a campaign with `python -m tf_injector run [args]`, you can reference the new dataset using the `--dataset` parameter to specify the dataset name and the `--dataset_path` parameter to indicate the root directory containing the dataset images, if necessary.
+
 > [!NOTE]
-> if a dataset with such name is already present, it gets swapped with the latter one Check the current avaliable dataset with the `python -m tf_injector run --help` command.
+> if a dataset with such name is already present, it gets swapped with the latter one. Check the current avaliable dataset with the `python -m tf_injector run --help` command.
 
 ### Metrics
-- Create a python file with a class that extends Metric. Follow the template in `./templates`. The name of the file must be equal to the name of the class.
+To add a new mectric create in your local machine a python file structured as `template/Metric_template.py`. The filename must match the name of the class contained within the file.
 
-- Run the ldmetric command in the injector
+Run the following command to load the new metric into the injector.
 ```
 python -m tf_injector ldmetric --path /PATH_TO_PYTHON_FILE
 ```
+
+To use the metric in a campaign, specify it in the `--metric` parameter when running `python -m tf_injector run [args]`, using the name of the implementing class.
 
 ## Reproduce experiments
 Go to the repository on https://gitlab.pmcs2i.ec-lyon.fr/spappala/dnn-benchmarks. Download the folder `tensorflow` and copy into tf_injector. It contains models and fault lists for each dataset. 
@@ -209,8 +224,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet121_TF_FL.csv \
 --model tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet121.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch 2048
 ```
 
@@ -221,8 +234,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet161_TF_FL.csv \
 --model tensorflow/gpu/image_classification/CIFAR10/fp32/densenet/DenseNet161.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch 2048
 ```
 
@@ -232,8 +243,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/googlenet/googlenet_cifar10_TF_FL.csv\
 --model tensorflow/gpu/image_classification/CIFAR10/fp32/googlenet/GoogLeNet.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch 2048
 ```
 
@@ -243,8 +252,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/mobilenet/mobilenetv2_cifar10_TF_FL.csv\
 --model tensorflow/gpu/image_classification/CIFAR10/fp32/mobilenet/MobileNetV2.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch  2048
 ```
 
@@ -254,8 +261,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet20_TF_FL.csv\
 --model tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet20.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch  2048
 ```
 
@@ -265,8 +270,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet32_TF_FL.csv\
 --model tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet32.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch  2048
 ```
 
@@ -276,8 +279,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet44_TF_FL.csv\
 --model tensorflow/gpu/image_classification/CIFAR10/fp32/resnet/ResNet44.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch  2048
 ```
 
@@ -287,8 +288,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg11_bn_TF_FL.csv\
 --model tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg11_bn.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch  2048
 ```
 
@@ -298,8 +297,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg13_bn_TF_FL.csv\
 --model tensorflow/gpu/image_classification/CIFAR10/fp32/vgg/Vgg13_bn.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch  2048
 ```
 
@@ -312,8 +309,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR100/fp32/densenet/DenseNet121_TF_FL.csv \
 --model tensorflow/gpu/image_classification/CIFAR100/fp32/densenet/DenseNet121.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch 2048
 ```
 
@@ -323,8 +318,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR100/fp32/googlenet/googlenet_cifar100_TF_FL.csv\
 --model tensorflow/gpu/image_classification/CIFAR100/fp32/googlenet/GoogLeNet.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch 2048
 ```
 
@@ -334,8 +327,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/CIFAR100/fp32/resnet/ResNet18_TF_FL.csv\
 --model tensorflow/gpu/image_classification/CIFAR100/fp32/resnet/ResNet18.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch  2048
 ```
 
@@ -348,8 +339,6 @@ python -m tf_injector run \
 --metrics ImageClassificationMetric \
 --fault_list tensorflow/gpu/image_classification/GTSRB/fp32/densenet/DenseNet121_TF_FL.csv \
 --model tensorflow/gpu/image_classification/GTSRB/fp32/densenet/DenseNet121.keras \
---postprocess "lambda x : x " \
---output_path out \
 --batch 2048
 ```
 
@@ -366,9 +355,8 @@ python -m tf_injector run \
 --fault_list tensorflow/gpu/image_segmentation/PascalVOC/fp32/DeepLabV3/DeepLabV3_ResNet50_TF_FL.csv
 --model tensorflow/gpu/image_segmentation/PascalVOC/fp32/DeepLabV3/DeepLabV3_ResNet50.keras
 --postprocess "lambda x : x[0]" \
---output_path out \
 --batch 2048
 ```
 
 > [!NOTE]
-> reports can be found in `tf_injector/out`
+> reports can be found in `tf_injector/out` if --out parameter is not specified.
