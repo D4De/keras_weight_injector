@@ -2,6 +2,9 @@ import numpy as np
 import csv
 import os
 
+import pandas as pd
+from typing import Optional, List, Dict, Any
+
 from datetime import datetime
 
 from tf_injector.utils import DEFAULT_REPORT_DIR
@@ -35,23 +38,18 @@ class CampaignWriter:
 
     def __enter__(self) -> "CampaignWriter":
         write_header = not os.path.exists(self.filepath)
-        self.file = open(self.filepath, "a")
-        # TODO: Use pandas rather than csv
-        # The reason behind using pandas is that some metrics
-        # (like IOU, a.k.a. jaccard index) have a lot of nans
-        # (not a numbers) in the output. With pandas they are
-        # treated like empty bytes, which saves lots of space
-        # and, apparently isn't possibile to do the same with
-        # the library csv.
-        # pandas has the option of appending to file.
-        self.writer = csv.writer(self.file)
-        if write_header:
-            self.writer.writerow(self.report_header)
+        self.data: List[Dict[str, Any]] = []
+        self.write_header = write_header
 
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.file.close()
+        
+        if self.data:
+            df = pd.DataFrame(self.data)
+            mode = 'w' if self.write_header else 'a'
+            df.to_csv(self.filepath, mode=mode, header=self.write_header, index=False)
+
 
     @staticmethod
     def get_filename(dataset: str, network: str, time: str) -> str:
@@ -65,8 +63,10 @@ class CampaignWriter:
     def write_gold(self, gold_row: tuple[int,...]):
         padding = [None]
         repeat = 3 if not self.one_line_per_input else 4
-        row = ("GOLDEN", *(padding * repeat), *gold_row)
-        self.writer.writerow(row)
+        row_values = ["GOLDEN"] + (padding * repeat) + list(gold_row)
+        
+        row_dict = {header: value for header, value in zip(self.report_header, row_values)}
+        self.data.append(row_dict)
 
     def write_fault(
         self,
@@ -84,23 +84,22 @@ class CampaignWriter:
             ))
             fault_metrics_str.append(newRow) """
         
+
         if not self.one_line_per_input:
-            # patch: fault_metrics is a 2D tf.Tensor of float -> convert to a list of integers
-            # TODO : why 32 bits?
-            #fault_metrics = list(fault_metrics.numpy().T[0].astype(np.uint32))
-            row = (fault_id, *fault, num_injections, *fault_metrics)
-            self.writer.writerow(row) 
+            row_values = [fault_id] + list(fault) + [num_injections] + list(fault_metrics)
+            row_dict = {header: value for header, value in zip(self.report_header, row_values)}
+            self.data.append(row_dict)
         else:
-            rows = []
             for i in range(num_injections):
-                rows.append([
+                row_values = [
                     fault_id,
                     *fault,
                     i,
                     num_injections,
-                    *[ *fault_metrics[i].numpy().tolist() ], # *fault_metrics_str[i],
-                ])
-            self.writer.writerows(rows)
+                    *fault_metrics[i].numpy().tolist(),
+                ]
+                row_dict = {header: value for header, value in zip(self.report_header, row_values)}
+                self.data.append(row_dict)
 
 
     def save_scores(self, scores: np.ndarray, inj_id: Optional[int] = None):
