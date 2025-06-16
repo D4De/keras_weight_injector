@@ -26,6 +26,7 @@ class CampaignWriter:
         report_header: tuple[str,...],
         file_dir: os.PathLike = DEFAULT_REPORT_DIR,
         one_line_per_input = False,
+        pickle: bool = False
     ):
         target_dir = os.path.join(file_dir, str(dataset), network)
         os.makedirs(target_dir, exist_ok=True)
@@ -35,6 +36,7 @@ class CampaignWriter:
         )
         self.report_header = report_header
         self.one_line_per_input = one_line_per_input
+        self.pickle = pickle
 
     def __enter__(self) -> "CampaignWriter":
         write_header = not os.path.exists(self.filepath)
@@ -47,8 +49,17 @@ class CampaignWriter:
         
         if self.data:
             df = pd.DataFrame(self.data)
-            mode = 'w' if self.write_header else 'a'
-            df.to_csv(self.filepath, mode=mode, header=self.write_header, index=False)
+
+            # the dataframe is saved more efficiently as a pickle file
+
+            if self.pickle:
+                path = self.filepath.replace('.csv', '.pkl')
+                df.to_pickle(path)
+            else:
+                mode = 'w' if self.write_header else 'a'
+                df.to_csv(self.filepath, mode=mode, header=self.write_header, index=False)
+
+            
 
 
     @staticmethod

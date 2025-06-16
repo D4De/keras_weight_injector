@@ -37,7 +37,8 @@ class Campaign:
         save_scores: bool = False,
         resume_from: int = 0,
         validate_fault_list: bool = True,
-        seed : int = None
+        seed : int = None,
+        pickle : bool = False, # if True, save the results in a pickle file
     ):
     
         self.dataset_name = dataset_name
@@ -62,6 +63,7 @@ class Campaign:
         self.save_scores = save_scores
         self.validate_fault_list = validate_fault_list
         self.seed = seed
+        self.pickle = pickle
 
         # tranfrom output function
         try:
@@ -222,7 +224,8 @@ class Campaign:
             network = network_name, 
             report_header = header,
             file_dir = self.output_path,
-            one_line_per_input= False
+            one_line_per_input= False,
+            pickle = self.pickle
             )
         
         with cw :

@@ -137,6 +137,11 @@ def parse_args():
         default=None, 
         help='Set a seed for determinism'
     )
+    run_parser.add_argument(
+        '--pickle', 
+        '-pic', 
+        help='Save the results in a pickle file instead of a csv file to optimize the space usage',
+    )
     
     return parser.parse_args()
 
@@ -147,6 +152,7 @@ def run(args):
     save_scores = True if args.save_scores else False
     resume_from = args.resume_from if args.resume_from else 0
     validate_fault_list = True if args.validate else False
+    pickle = True if args.pickle else False
 
     campaign = Campaign(
         dataset_name = args.dataset,
@@ -161,6 +167,7 @@ def run(args):
         resume_from = resume_from,
         validate_fault_list = validate_fault_list,
         seed = args.seed
+        pickle=pickle
     )
     campaign.run()
     return
