@@ -139,7 +139,7 @@ def parse_args():
     )
     run_parser.add_argument(
         '--pickle', 
-        '-pic', 
+        '-pic',
         help='Save the results in a pickle file instead of a csv file to optimize the space usage',
     )
     
@@ -166,7 +166,7 @@ def run(args):
         save_scores = save_scores,
         resume_from = resume_from,
         validate_fault_list = validate_fault_list,
-        seed = args.seed
+        seed = args.seed,
         pickle=pickle
     )
     campaign.run()

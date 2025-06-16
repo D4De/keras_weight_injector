@@ -96,7 +96,10 @@ To run an injection campaign, you will need:
 
 ## Outputs
 By default, a summarized report of the injection campaign is stored in `out/<dataset>/<network>/<dataset>_<network>_<datetime>.csv`
+
 By enabling the `--save-outputs` flag, inference outputs are saved as numpy arrays in the same folder, as `<datetime>/clean.npy` for the clean run, and `<datetime>/inj_<inj_id>.npy` for the faulty runs.
+
+By enabling `--pickle` flag the output is saved in .pickle formal instead of csv. This is optimal to preserve original python types and to optimize memory allocation.
 
 ### Output metrics
 
