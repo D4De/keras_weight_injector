@@ -116,6 +116,7 @@ def parse_args():
     run_parser.add_argument(
         '--save_scores', 
         '-s',
+        action='store_true',
         help='Save scores',
     )
     run_parser.add_argument(
@@ -128,6 +129,7 @@ def parse_args():
     run_parser.add_argument(
         '--validate', 
         '-v', 
+        action='store_true',
         help='Validate the fault list, checking if the layers are present in the model'
     )
     run_parser.add_argument(
@@ -140,6 +142,7 @@ def parse_args():
     run_parser.add_argument(
         '--pickle', 
         '-pic',
+        action='store_true',
         help='Save the results in a pickle file instead of a csv file to optimize the space usage',
     )
     
